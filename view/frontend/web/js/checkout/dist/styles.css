@@ -1,0 +1,22 @@
+#gene-better-checkout-root .fastlane-payment {
+  background-color: var(--radio-input-wrapper__background-color);
+  border: var(--radio-input-wrapper__border-weight) var(--base__border-style) var(--radio-input-wrapper__border-color);
+  border-radius: var(--radio-input-wrapper__border-radius);
+  display: grid;
+  gap: var(--indent__base);
+  margin-top: var(--indent__base);
+  padding: var(--indent__base);
+}
+#gene-better-checkout-root .fastlane-payment .fastlane-payment-radio span {
+  font-size: var(--font-size__s);
+}
+#gene-better-checkout-root .fastlane-payment.active {
+  background-color: var(--radio-input-wrapper__background-color-active);
+  border: var(--selected-border, var(--radio-input-wrapper__border-weight-active) var(--base__border-style) var(--radio-input-wrapper__border-color-active));
+}
+#gene-better-checkout-root .fastlane-payment .hidden {
+  display: none;
+}
+#gene-better-checkout-root .fastlane-payment ~ .braintree-drop-in .braintree-card {
+  display: none;
+}

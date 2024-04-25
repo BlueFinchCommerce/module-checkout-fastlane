@@ -1,0 +1,147 @@
+<template>
+  <div
+    v-if="profileData && config.paypal_fastlane_is_active && MyButton"
+    class="fastlane-payment"
+    :class="{ active: isMethodSelected }"
+  >
+    <component
+      :is="RadioButton"
+      :text="paymentTitle"
+      :checked="isMethodSelected"
+      class="fastlane-payment-radio"
+      @click="selectFastlane"
+      @keydown="selectFastlane"
+    />
+    <component
+      :is="ErrorMessage"
+      v-if="errorMessage && isMethodSelected"
+      :message="errorMessage"
+      :attached="false"
+    />
+    <div
+      :id="id"
+      :class="{ hidden: !isMethodSelected }"
+    />
+    <component
+      :is="Agreements"
+      v-if="isMethodSelected"
+      id="fastlane"
+    />
+    <component :is="PrivacyPolicy" v-if="isMethodSelected" />
+    <component
+      :is="Recaptcha"
+      v-if="isMethodSelected && isRecaptchaVisible('placeOrder')"
+      id="placeOrder"
+      location="fastlane"
+    />
+    <component
+      :is="MyButton"
+      v-if="isMethodSelected"
+      class="fastlane-payment-button"
+      :label="$t('Pay')"
+      primary
+      :disabled="buttonDisabled"
+      @click="createPayment()"
+    />
+  </div>
+</template>
+
+<script>
+import { mapActions, mapState } from 'pinia';
+import useFastlaneStore from '../stores/FastlaneStore';
+
+export default {
+  name: 'FastlanePaymentMethod',
+
+  data() {
+    return {
+      errorMessage: '',
+      id: 'fastlanePaymentComponent',
+      isMethodSelected: false,
+      isRecaptchaVisible: false,
+      paymentTitle: '',
+      paymentType: 'fastlane',
+      Agreements: null,
+      ErrorMessage: null,
+      MyButton: null,
+      PrivacyPolicy: null,
+      RadioButton: null,
+      Recaptcha: null,
+    };
+  },
+
+  computed: {
+    ...mapState(useFastlaneStore, ['config', 'profileData']),
+  },
+
+  async mounted() {
+    const {
+      default: {
+        components: {
+          Agreements,
+          ErrorMessage,
+          MyButton,
+          PrivacyPolicy,
+          RadioButton,
+          Recaptcha,
+        },
+        stores: { usePaymentStore, useRecaptchaStore },
+      },
+    } = await import(window.geneCheckout.main);
+
+    this.Agreements = Agreements;
+    this.ErrorMessage = ErrorMessage;
+    this.MyButton = MyButton;
+    this.RadioButton = RadioButton;
+    this.Recaptcha = Recaptcha;
+    this.PrivacyPolicy = PrivacyPolicy;
+
+    const paymentStore = usePaymentStore();
+    const recaptchaStore = useRecaptchaStore();
+
+    this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
+    this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
+
+    paymentStore.$subscribe((mutation) => {
+      if (typeof mutation.payload.errorMessage !== 'undefined') {
+        this.errorMessage = mutation.payload.errorMessage;
+      }
+    });
+
+    this.errorMessage = paymentStore.errorMessage;
+
+    paymentStore.paymentEmitter.on('paymentMethodSelected', ({ id }) => {
+      if (id !== this.paymentType) {
+        this.isMethodSelected = false;
+      }
+    });
+
+    await this.setup();
+
+    this.renderFastlanePaymentComponent(`#${this.id}`);
+
+    this.selectFastlane();
+  },
+
+  methods: {
+    ...mapActions(useFastlaneStore, ['createPayment', 'renderFastlanePaymentComponent', 'setup']),
+
+    async selectFastlane() {
+      this.isMethodSelected = true;
+
+      const { default: { stores: { usePaymentStore } } } = await import(window.geneCheckout.main);
+      const paymentStore = usePaymentStore();
+
+      paymentStore.paymentEmitter.emit('paymentMethodSelected', {
+        id: this.paymentType,
+        type: this.paymentType,
+      });
+    },
+  },
+};
+
+</script>
+
+<style lang="scss">
+@import "./styles.scss";
+</style>
