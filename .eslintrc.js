@@ -1,5 +1,4 @@
-require('@rushstack/eslint-patch/modern-module-resolution');
-
 module.exports = {
-    extends: '@genecommerce/eslint-config-gene'
+    extends: './vendor/magento/magento-coding-standard/eslint/.eslintrc',
+    root: true
 };

@@ -1,0 +1,20 @@
+<?php
+/**
+ * @var \Magento\Framework\View\Element\Template $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @var \Gene\BetterCheckout\ViewModel\Assets $assetViewModel
+ */
+?>
+
+<script>
+    window.geneCheckout = window.geneCheckout || {};
+
+    window.geneCheckout.belowEmailFields = window.geneCheckout.belowEmailFields || {};
+    window.geneCheckout.overrides = window.geneCheckout.overrides || {};
+    window.geneCheckout.paymentMethods = window.geneCheckout.paymentMethods || {};
+
+    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.js')) ?>";
+    window.geneCheckout.paymentMethods.FastlanePaymentMethod = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.js')) ?>";
+</script>
+
+<link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />

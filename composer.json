@@ -12,14 +12,18 @@
     }
   },
   "require": {
-    "magento/framework": "*"
+    "php": "~8.1.0||~8.2.0",
+    "magento/framework": "*",
+    "magento/module-checkout": "*",
+    "magento/module-quote": "*"
   },
   "require-dev": {
-      "bitexpert/phpstan-magento": "^0.27",
-      "magento/magento-coding-standard": "^29.0",
-      "phpstan/phpstan": "*",
-      "phpcompatibility/php-compatibility": "^9.3",
-      "phpunit/phpunit": "^9.5"
+    "magento/magento-coding-standard": "*",
+    "phpcompatibility/php-compatibility": "*",
+    "phpunit/phpunit": "*",
+    "phpstan/phpstan": "^1.9",
+    "squizlabs/php_codesniffer": "^3.6",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
   },
   "repositories": [
       {
