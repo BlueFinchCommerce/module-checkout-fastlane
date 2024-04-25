@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="profileData && config.paypal_fastlane_is_active && MyButton"
+    v-if="config.paypal_fastlane_is_active && MyButton"
     class="fastlane-payment"
     :class="{ active: isMethodSelected }"
   >

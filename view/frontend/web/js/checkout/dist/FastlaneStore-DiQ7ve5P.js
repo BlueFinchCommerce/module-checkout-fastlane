@@ -2819,7 +2819,7 @@ var mapAddress = async (address) => {
   return {
     id: null,
     street: [
-      address.streetAddress
+      address.streetAddress,
     ],
     city: address.locality,
     region: {
@@ -2982,7 +2982,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
       }
 
       this.setData({
-        profileData
+        profileData,
       });
 
       const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
@@ -3036,20 +3036,20 @@ var useFastlaneStore = defineStore('fastlaneStore', {
     },
 
     async renderFastlanePaymentComponent(selector) {
-      if (this.$state.fastlaneInstance && this.profileData) {
+      if (this.$state.fastlaneInstance) {
         const fields = {
-            phoneNumber: {
-                prefill: this.$state.profileData?.shippingAddress?.phoneNumber || ''
-            }
+          phoneNumber: {
+            prefill: this.$state.profileData?.shippingAddress?.phoneNumber || '',
+          },
         };
 
         // Add the card holder name field if enabled in config.
         if (this.$state.config.paypal_fastlane_show_cardholder_name) {
-            fields.cardholderName = {};
+          fields.cardholderName = {};
         }
 
         const fastlanePaymentComponent = await this.$state.fastlaneInstance
-            .FastlanePaymentComponent({ fields });
+          .FastlanePaymentComponent({ fields });
 
         fastlanePaymentComponent.render(selector);
 
@@ -3077,8 +3077,8 @@ var useFastlaneStore = defineStore('fastlaneStore', {
             useLoadingStore,
             usePaymentStore,
             useShippingMethodsStore,
-          }
-        }
+          },
+        },
       } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
       const loadingStore = useLoadingStore();
@@ -3109,12 +3109,12 @@ var useFastlaneStore = defineStore('fastlaneStore', {
       const {
         default: {
           helpers: {
-            getPaymentExtensionAttributes
+            getPaymentExtensionAttributes,
           },
           services: {
-            createPaymentRest
-          }
-        }
+            createPaymentRest,
+          },
+        },
       } = await import(window.geneCheckout.main);
 
       const paymentMethod = {
@@ -3155,8 +3155,8 @@ var useFastlaneStore = defineStore('fastlaneStore', {
               useBraintreeStore,
               useCartStore,
               useCustomerStore,
-            }
-          }
+            },
+          },
         } = await import(window.geneCheckout.main);
         const braintreeStore = useBraintreeStore();
         const cartStore = useCartStore();
@@ -3165,6 +3165,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
         // If 3DS is disabled then skip over this step.
         if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
           resolve(nonce);
+          return;
         }
 
         const billingAddress = deepClone(customerStore.selected.billing);
@@ -3178,7 +3179,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
 
         const threeDSecureParameters = {
           amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
-          nonce: nonce,
+          nonce,
           bin: {},
           challengeRequested,
           billingAddress,
@@ -3187,7 +3188,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
           },
         };
 
-        braintreeStore.threeDSecureInstance.verifyCard(threeDSecureParameters, function (err, threeDSResponse) {
+        braintreeStore.threeDSecureInstance.verifyCard(threeDSecureParameters, (err, threeDSResponse) => {
           if (err) {
             if (err.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
               const errorMessage = err.details.originalError.details.originalError.error.message;
@@ -3215,6 +3216,8 @@ var useFastlaneStore = defineStore('fastlaneStore', {
           } else {
             reject(new Error('Please try again with another form of payment.'));
           }
+
+          return true;
         });
       });
     },
@@ -3244,7 +3247,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
         if (this.profileData) {
           const {
             selectionChanged,
-            selectedAddress
+            selectedAddress,
           } = await this.fastlaneInstance.profile.showShippingAddressSelector();
 
           if (selectionChanged) {
