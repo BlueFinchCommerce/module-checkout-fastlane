@@ -205,7 +205,7 @@ export default defineStore('fastlaneStore', {
     },
 
     async renderFastlanePaymentComponent(selector) {
-      if (this.$state.fastlaneInstance && this.profileData) {
+      if (this.$state.fastlaneInstance) {
         const fields = {
           phoneNumber: {
             prefill: this.$state.profileData?.shippingAddress?.phoneNumber || '',

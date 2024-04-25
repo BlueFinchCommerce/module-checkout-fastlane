@@ -1,4 +1,4 @@
-import { m as mapState, a as mapActions, u as useFastlaneStore, c as createElementBlock, b as createBlock, r as resolveDynamicComponent, d as createCommentVNode, e as createBaseVNode, n as normalizeClass, o as openBlock } from '../FastlaneStore-BTpxhSUH.js';
+import { m as mapState, a as mapActions, u as useFastlaneStore, c as createElementBlock, b as createBlock, r as resolveDynamicComponent, d as createCommentVNode, e as createBaseVNode, n as normalizeClass, o as openBlock } from '../FastlaneStore-D4ObomsN.js';
 
 var script = {
   name: 'FastlanePaymentMethod',
@@ -35,8 +35,8 @@ var script = {
           RadioButton,
           Recaptcha,
         },
-        stores: { usePaymentStore, useRecaptchaStore }
-      }
+        stores: { usePaymentStore, useRecaptchaStore },
+      },
     } = await import(window.geneCheckout.main);
 
     this.Agreements = Agreements;
@@ -55,7 +55,8 @@ var script = {
     paymentStore.$subscribe((mutation) => {
       if (typeof mutation.payload.errorMessage !== 'undefined') {
         this.errorMessage = mutation.payload.errorMessage;
-      }    });
+      }
+    });
 
     this.errorMessage = paymentStore.errorMessage;
 
@@ -92,10 +93,10 @@ var script = {
 const _hoisted_1 = ["id"];
 
 function render(_ctx, _cache, $props, $setup, $data, $options) {
-  return (_ctx.profileData && _ctx.config.paypal_fastlane_is_active && $data.MyButton)
+  return (_ctx.config.paypal_fastlane_is_active && $data.MyButton)
     ? (openBlock(), createElementBlock("div", {
         key: 0,
-        class: normalizeClass(["fastlane-payment", {active: $data.isMethodSelected}])
+        class: normalizeClass(["fastlane-payment", { active: $data.isMethodSelected }])
       }, [
         (openBlock(), createBlock(resolveDynamicComponent($data.RadioButton), {
           text: $data.paymentTitle,
@@ -113,7 +114,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           : createCommentVNode("v-if", true),
         createBaseVNode("div", {
           id: $data.id,
-          class: normalizeClass({hidden: !$data.isMethodSelected})
+          class: normalizeClass({ hidden: !$data.isMethodSelected })
         }, null, 10 /* CLASS, PROPS */, _hoisted_1),
         ($data.isMethodSelected)
           ? (openBlock(), createBlock(resolveDynamicComponent($data.Agreements), {
