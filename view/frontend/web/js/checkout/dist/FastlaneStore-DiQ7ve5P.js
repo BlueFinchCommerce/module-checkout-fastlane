@@ -3165,6 +3165,7 @@ var useFastlaneStore = defineStore('fastlaneStore', {
         // If 3DS is disabled then skip over this step.
         if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
           resolve(nonce);
+          return;
         }
 
         const billingAddress = deepClone(customerStore.selected.billing);
