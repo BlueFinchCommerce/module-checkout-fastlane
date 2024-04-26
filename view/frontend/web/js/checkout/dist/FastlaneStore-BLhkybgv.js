@@ -2935,6 +2935,11 @@ var useFastlaneStore = defineStore('fastlaneStore', {
     },
 
     async attachEmailListener() {
+      // Early return if Fastlane is not active.
+      if (!this.$state.config.paypal_fastlane_is_active) {
+        return;
+      }
+
       const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
 
