@@ -2847,6 +2847,8 @@ var useFastlaneStore = defineStore('fastlaneStore', {
     fastlanePaymentComponent: null,
     fastlaneWatermark: null,
     profileData: null,
+    email: null,
+    isLookingUpUser: false,
   }),
   getters: {},
   actions: {
@@ -2946,15 +2948,20 @@ var useFastlaneStore = defineStore('fastlaneStore', {
       const debounced = debounce$1(this.lookupUser, 2000);
       customerStore.$subscribe(async (mutation, payload) => {
         if (mutation.type === 'direct' && typeof payload.customer.email !== 'undefined') {
-          debounced(payload.customer.email);
+          if (this.email !== payload.customer.email) {
+            debounced(payload.customer.email);
+            this.email = payload.customer.email;
+          }
         }
       });
     },
 
     async lookupUser(email) {
-      if (!email) {
+      if (!email || this.isLookingUpUser) {
         return;
       }
+
+      this.isLookingUpUser = true;
 
       const { default: { stores: { useLoadingStore } } } = await import(window.geneCheckout.main);
       const loadingStore = useLoadingStore();
@@ -2976,6 +2983,8 @@ var useFastlaneStore = defineStore('fastlaneStore', {
           await this.handleShippingAddress(profileData.shippingAddress);
         }
       }
+
+      this.isLookingUpUser = false;
 
       loadingStore.setLoadingState(false);
     },
