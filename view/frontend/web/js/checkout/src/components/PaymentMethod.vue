@@ -102,25 +102,28 @@ export default {
     this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
     this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
-    paymentStore.$subscribe((mutation) => {
-      if (typeof mutation.payload.errorMessage !== 'undefined') {
-        this.errorMessage = mutation.payload.errorMessage;
-      }
-    });
+    if (this.config.paypal_fastlane_is_active) {
+      paymentStore.$subscribe((mutation) => {
+        if (typeof mutation.payload !== 'undefined'
+          && typeof mutation.payload.errorMessage !== 'undefined') {
+          this.errorMessage = mutation.payload.errorMessage;
+        }
+      });
 
-    this.errorMessage = paymentStore.errorMessage;
+      this.errorMessage = paymentStore.errorMessage;
 
-    paymentStore.paymentEmitter.on('paymentMethodSelected', ({ id }) => {
-      if (id !== this.paymentType) {
-        this.isMethodSelected = false;
-      }
-    });
+      paymentStore.paymentEmitter.on('paymentMethodSelected', ({ id }) => {
+        if (id !== this.paymentType) {
+          this.isMethodSelected = false;
+        }
+      });
 
-    await this.setup();
+      await this.setup();
 
-    this.renderFastlanePaymentComponent(`#${this.id}`);
+      this.renderFastlanePaymentComponent(`#${this.id}`);
 
-    this.selectFastlane();
+      this.selectFastlane();
+    }
   },
 
   methods: {
