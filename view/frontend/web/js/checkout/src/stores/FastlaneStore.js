@@ -310,6 +310,7 @@ export default defineStore('fastlaneStore', {
 
       if (!isValid) {
         loadingStore.setLoadingState(false);
+        paymentStore.setErrorMessage('Please check your address format.');
         return;
       }
 
