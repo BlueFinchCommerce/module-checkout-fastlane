@@ -1,0 +1,5 @@
+# Ignore the Checkout app.
+view/frontend/web/js/checkout/*
+
+# Ignore composer files
+vendor/

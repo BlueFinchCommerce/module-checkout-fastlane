@@ -18,9 +18,6 @@
   },
   "homepage": "https://github.com/genecommerce/template-module#readme",
   "devDependencies": {
-    "@genecommerce/eslint-config-gene": "^0.4.0",
-    "@rushstack/eslint-patch": "^1.2.0",
-    "eslint": "^8",
-    "eslint-plugin-diff": "^2.0.2-2"
+    "eslint": "^8"
   }
 }
