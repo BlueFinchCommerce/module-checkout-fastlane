@@ -1,4 +1,4 @@
-import { m as mapState, a as mapActions, u as useFastlaneStore, c as createElementBlock, b as createBlock, r as resolveDynamicComponent, d as createCommentVNode, e as createBaseVNode, n as normalizeClass, o as openBlock } from '../FastlaneStore-DtEpjRQt.js';
+import { m as mapState, a as mapActions, u as useFastlaneStore, c as createElementBlock, b as createBlock, r as resolveDynamicComponent, d as createCommentVNode, e as createBaseVNode, n as normalizeClass, o as openBlock } from '../FastlaneStore-DIh38EC2.js';
 
 var script = {
   name: 'FastlanePaymentMethod',
@@ -8,6 +8,7 @@ var script = {
       errorMessage: '',
       id: 'fastlanePaymentComponent',
       isMethodSelected: false,
+      selectedMethod: 'fastlane',
       isRecaptchaVisible: false,
       paymentTitle: '',
       paymentType: 'fastlane',
@@ -19,11 +20,20 @@ var script = {
       Recaptcha: null,
     };
   },
-
   computed: {
     ...mapState(useFastlaneStore, ['config', 'profileData']),
   },
-
+  watch: {
+    selectedMethod: {
+      handler(newVal) {
+        if (newVal !== null && newVal !== this.paymentType) {
+          this.isMethodSelected = false;
+        }
+      },
+      immediate: true,
+      deep: true,
+    },
+  },
   async mounted() {
     const {
       default: {
@@ -52,28 +62,26 @@ var script = {
     this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
     this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
-    if (this.config.paypal_fastlane_is_active) {
-      paymentStore.$subscribe((mutation) => {
-        if (typeof mutation.payload !== 'undefined'
-          && typeof mutation.payload.errorMessage !== 'undefined') {
-          this.errorMessage = mutation.payload.errorMessage;
-        }
-      });
+    paymentStore.$subscribe((mutation) => {
+      if (typeof mutation.payload !== 'undefined'
+        && typeof mutation.payload.errorMessage !== 'undefined') {
+        this.errorMessage = mutation.payload.errorMessage;
+      }
+    });
 
-      this.errorMessage = paymentStore.errorMessage;
+    this.errorMessage = paymentStore.errorMessage;
 
-      paymentStore.paymentEmitter.on('paymentMethodSelected', ({ id }) => {
-        if (id !== this.paymentType) {
-          this.isMethodSelected = false;
-        }
-      });
+    paymentStore.$subscribe((mutation) => {
+      if (typeof mutation.payload.selectedMethod !== 'undefined') {
+        this.selectedMethod = mutation.payload.selectedMethod;
+      }
+    });
 
-      await this.setup();
+    await this.setup();
 
-      this.renderFastlanePaymentComponent(`#${this.id}`);
+    this.renderFastlanePaymentComponent(`#${this.id}`);
 
-      this.selectFastlane();
-    }
+    this.selectFastlane();
   },
 
   methods: {
@@ -84,11 +92,7 @@ var script = {
 
       const { default: { stores: { usePaymentStore } } } = await import(window.geneCheckout.main);
       const paymentStore = usePaymentStore();
-
-      paymentStore.paymentEmitter.emit('paymentMethodSelected', {
-        id: this.paymentType,
-        type: this.paymentType,
-      });
+      paymentStore.selectPaymentMethod('fastlane');
     },
   },
 };

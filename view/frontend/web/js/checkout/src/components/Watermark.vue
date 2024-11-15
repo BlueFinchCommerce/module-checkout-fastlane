@@ -2,7 +2,7 @@
   <div
     v-if="config.paypal_fastlane_is_active"
     :id="id">
-    <img src="https://www.paypalobjects.com/fastlane-v1/assets/fastlane-with-tooltip_en_sm_light.0808.svg" />
+    <img :alt="id" src="https://www.paypalobjects.com/fastlane-v1/assets/fastlane-with-tooltip_en_sm_light.0808.svg" />
   </div>
 </template>
 
