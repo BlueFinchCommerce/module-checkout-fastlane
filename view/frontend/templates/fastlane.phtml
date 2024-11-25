@@ -14,10 +14,10 @@
 
     window.geneCheckout.belowEmailFields = window.geneCheckout.belowEmailFields || {};
     window.geneCheckout.overrides = window.geneCheckout.overrides || {};
-    window.geneCheckout.paymentMethods = window.geneCheckout.paymentMethods || {};
+    window.geneCheckout.paymentMethodsPrimary = window.geneCheckout.paymentMethodsPrimary || {};
 
     window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($watermarkComponent) ?>";
-    window.geneCheckout.paymentMethods.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
+    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
 </script>
 
 <link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />

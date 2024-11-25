@@ -27,18 +27,18 @@ export default defineStore('fastlaneStore', {
 
     buildJsPromises() {
       const files = [
-        'https://js.braintreegateway.com/web/3.101.0-fastlane-beta.7.2/js/client.min.js',
-        'https://js.braintreegateway.com/web/3.101.0-fastlane-beta.7.2/js/data-collector.min.js',
-        'https://js.braintreegateway.com/web/3.101.0-fastlane-beta.7.2/js/fastlane.min.js',
+        'https://js.braintreegateway.com/web/3.104.0/js/client.min.js',
+        'https://js.braintreegateway.com/web/3.104.0/js/data-collector.min.js',
+        'https://js.braintreegateway.com/web/3.104.0/js/fastlane.min.js',
       ];
       const promises = [];
 
       files.forEach((file) => {
         const promise = new Promise((resolve) => {
-          const googlePayScript = document.createElement('script');
-          googlePayScript.setAttribute('src', file);
-          googlePayScript.onload = resolve;
-          document.head.appendChild(googlePayScript);
+          const braintreeScript = document.createElement('script');
+          braintreeScript.setAttribute('src', file);
+          braintreeScript.onload = resolve;
+          document.head.appendChild(braintreeScript);
         });
         promises.push(promise);
       });
@@ -62,7 +62,9 @@ export default defineStore('fastlaneStore', {
         await this.addRequiredJs();
         window.localStorage.setItem('axoEnv', 'sandbox');
 
-        const { default: { stores: { useBraintreeStore } } } = await import(window.geneCheckout.main);
+        const {
+          default: { stores: { useBraintreeStore } },
+        } = await import(window.geneCheckout.main);
         const braintreeStore = useBraintreeStore();
 
         await braintreeStore.createClientToken();
@@ -137,7 +139,9 @@ export default defineStore('fastlaneStore', {
 
       loadingStore.setLoadingState(true);
 
-      const { customerContextId } = await this.$state.fastlaneInstance.identity.lookupCustomerByEmail(email);
+      const {
+        customerContextId,
+      } = await this.$state.fastlaneInstance.identity.lookupCustomerByEmail(email);
 
       this.setData({
         profileData: null,
@@ -145,7 +149,10 @@ export default defineStore('fastlaneStore', {
 
       // If we have do have an account then trigger the authentication.
       if (customerContextId) {
-        const { profileData } = await this.$state.fastlaneInstance.identity.triggerAuthenticationFlow(customerContextId);
+        const {
+          profileData,
+        } = await this.$state.fastlaneInstance
+          .identity.triggerAuthenticationFlow(customerContextId);
 
         if (profileData) {
           await this.setProfileData(profileData, email);
@@ -177,8 +184,11 @@ export default defineStore('fastlaneStore', {
     },
 
     async handleShippingAddress(shippingAddress) {
-      const { default: { stores: { useCustomerStore, useStepsStore } } } = await import(window.geneCheckout.main);
+      const {
+        default: { stores: { useCustomerStore, useStepsStore, useValidationStore } },
+      } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
+      const validationStore = useValidationStore();
 
       customerStore.setEmailEntered();
       customerStore.setAddressAsCustom('shipping');
@@ -187,7 +197,12 @@ export default defineStore('fastlaneStore', {
       customerStore.setAddressToStore(mappedAddress, 'shipping');
       customerStore.setAddressAsCustom('shipping');
 
-      const isValid = customerStore.validateAddress('shipping', true) && customerStore.validatePostcode('shipping', true);
+      const isValid = validationStore.validateAddress('shipping', true)
+        && validationStore.validationStore.validateField(
+          'shipping',
+          'postcode',
+          true,
+        );
 
       if (!isValid) {
         customerStore.setAddressAsEditing('shipping', true);
@@ -203,7 +218,9 @@ export default defineStore('fastlaneStore', {
     },
 
     async getShippingMethods() {
-      const { default: { stores: { useShippingMethodsStore, useStepsStore } } } = await import(window.geneCheckout.main);
+      const {
+        default: { stores: { useShippingMethodsStore, useStepsStore } },
+      } = await import(window.geneCheckout.main);
       const shippingMethodsStore = useShippingMethodsStore();
       const stepsStore = useStepsStore();
 
@@ -245,7 +262,10 @@ export default defineStore('fastlaneStore', {
         return;
       }
 
-      const { id, paymentSource: { card: { billingAddress, name } } } = await this.$state.fastlanePaymentComponent.getPaymentToken();
+      const {
+        id,
+        paymentSource: { card: { billingAddress, name } },
+      } = await this.$state.fastlanePaymentComponent.getPaymentToken();
       const {
         default: {
           helpers: {
@@ -260,18 +280,21 @@ export default defineStore('fastlaneStore', {
             useLoadingStore,
             usePaymentStore,
             useShippingMethodsStore,
+            useValidationStore,
           },
         },
       } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
       const loadingStore = useLoadingStore();
       const paymentStore = usePaymentStore();
+      const validationStore = useValidationStore();
 
       loadingStore.setLoadingState(true);
       paymentStore.setErrorMessage('');
 
       const mappedAddress = await mapAddress(billingAddress);
       const splitName = name.split(' ');
+      /* eslint-disable prefer-destructuring */
       mappedAddress.firstname = splitName[0];
       mappedAddress.lastname = splitName[1];
       mappedAddress.telephone = customerStore.selected.shipping.telephone;
@@ -279,10 +302,15 @@ export default defineStore('fastlaneStore', {
       customerStore.createNewBillingAddress('billing');
       customerStore.setAddressToStore(mappedAddress, 'billing');
 
-      const isValid = customerStore.validateAddress('billing') && customerStore.validatePostcode('billing');
+      const isValid = validationStore.validateAddress('billing') && validationStore.validateField(
+        'billing',
+        'postcode',
+        true,
+      );
 
       if (!isValid) {
         loadingStore.setLoadingState(false);
+        paymentStore.setErrorMessage('Please check your address format.');
         return;
       }
 
@@ -312,11 +340,17 @@ export default defineStore('fastlaneStore', {
         },
       };
 
+      loadingStore.setLoadingState(true);
       this.handleThreeDS(id)
-        .then((nonce) => paymentMethod.paymentMethod.additional_data.payment_method_nonce = nonce)
+        .then((nonce) => {
+          paymentMethod.paymentMethod.additional_data.payment_method_nonce = nonce;
+          return nonce;
+        })
         .then(() => createPaymentRest(paymentMethod))
         .then(() => refreshCustomerData(['cart']))
-        .then(() => { window.location.href = getSuccessPageUrl(); })
+        .then(() => {
+          window.location.href = getSuccessPageUrl();
+        })
         .catch((error) => {
           try {
             handleServiceError(error);
@@ -328,80 +362,80 @@ export default defineStore('fastlaneStore', {
     },
 
     handleThreeDS(nonce) {
-      return new Promise(async (resolve, reject) => {
-        const {
-          default: {
-            helpers: {
-              deepClone,
-            },
-            stores: {
-              useBraintreeStore,
-              useCartStore,
-              useCustomerStore,
-            },
-          },
-        } = await import(window.geneCheckout.main);
-        const braintreeStore = useBraintreeStore();
-        const cartStore = useCartStore();
-        const customerStore = useCustomerStore();
+      return new Promise((resolve, reject) => {
+        import(window.geneCheckout.main)
+          .then(({
+                   default: {
+                     helpers: {
+                       deepClone,
+                     },
+                     stores: { useBraintreeStore, useCartStore, useCustomerStore },
+                   },
+                 }) => {
+            const braintreeStore = useBraintreeStore();
+            const cartStore = useCartStore();
+            const customerStore = useCustomerStore();
 
-        // If 3DS is disabled then skip over this step.
-        if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
-          resolve(nonce);
-          return;
-        }
-
-        const billingAddress = deepClone(customerStore.selected.billing);
-
-        billingAddress.countryCodeAlpha2 = billingAddress.country_code;
-        billingAddress.region = billingAddress.region.region_code || billingAddress.region.region;
-
-        const price = cartStore.cartGrandTotal / 100;
-        const threshold = braintreeStore.threeDSThresholdAmount;
-        const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
-
-        const threeDSecureParameters = {
-          amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
-          nonce,
-          bin: {},
-          challengeRequested,
-          billingAddress,
-          onLookupComplete: (lookupData, next) => {
-            next();
-          },
-        };
-
-        braintreeStore.threeDSecureInstance.verifyCard(threeDSecureParameters, (err, threeDSResponse) => {
-          if (err) {
-            if (err.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
-              const errorMessage = err.details.originalError.details.originalError.error.message;
-              const message = 'Please update the address and try again.';
-              if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
-                return reject(
-                  new Error(`Billing line1 must be string and less than 50 characters. ${message}`),
-                );
-              } if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
-                return reject(
-                  new Error(`Billing line2 must be string and less than 50 characters. ${message}`),
-                );
-              }
+            // If 3DS is disabled, skip over this step.
+            if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
+              resolve(nonce);
+              return;
             }
-            return reject(err);
-          }
 
-          const liability = {
-            shifted: threeDSResponse.liabilityShifted,
-            shiftPossible: threeDSResponse.liabilityShiftPossible,
-          };
+            const billingAddress = deepClone(customerStore.selected.billing);
+            billingAddress.countryCodeAlpha2 = billingAddress.country_code;
+            billingAddress.region = billingAddress.region.region_code
+              || billingAddress.region.region;
 
-          if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
-            resolve(threeDSResponse.nonce);
-          } else {
-            reject(new Error('Please try again with another form of payment.'));
-          }
+            const price = cartStore.cartGrandTotal / 100;
+            const threshold = braintreeStore.threeDSThresholdAmount;
+            const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
 
-          return true;
-        });
+            const threeDSecureParameters = {
+              amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
+              nonce,
+              bin: {},
+              challengeRequested,
+              billingAddress,
+              onLookupComplete: (lookupData, next) => {
+                next();
+              },
+            };
+
+            braintreeStore.threeDSecureInstance.verifyCard(
+              threeDSecureParameters,
+              (err, threeDSResponse) => {
+                if (err) {
+                  if (err.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
+                    const errorMessage = err.details.originalError.details
+                      .originalError.error.message;
+                    const message = 'Please update the address and try again.';
+                    if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
+                      return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
+                    }
+                    if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
+                      return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
+                    }
+                  }
+                  return reject(err);
+                }
+
+                const liability = {
+                  shifted: threeDSResponse.liabilityShifted,
+                  shiftPossible: threeDSResponse.liabilityShiftPossible,
+                };
+
+                if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
+                  resolve(threeDSResponse.nonce);
+                } else {
+                  reject(new Error('Please try again with another form of payment.'));
+                }
+
+                return true;
+              },
+            );
+          })
+          .catch(reject);
       });
     },
 
