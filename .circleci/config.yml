@@ -1,22 +1,43 @@
 version: 2.1
-orbs:
-  node: circleci/node@5.0.3
-  gh: circleci/github-cli@2.2.0
-  jq: circleci/jq@2.2.0
 jobs:
   build:
     docker:
-      - image: cimg/php:8.1
+      - image: cimg/php:8.2.15-browsers
+      - image: cimg/mariadb:10.4
+        environment:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: m2build
+      - image: docker.elastic.co/elasticsearch/elasticsearch:7.12.0
+        environment:
+          transport.host: 127.0.0.1
+          network.host: 127.0.0.1
+          http.port: 9200
+          cluster.name: es-cluster
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx256m"
     working_directory: ~/magento2
-    executor: node/default
     steps:
-      - checkout
-      - gh/install
-      - jq/install
+      - run:
+          name: Waiting for MySQL startup
+          command: |
+            for i in `seq 1 20`;
+            do
+              nc -z 127.0.0.1 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo MySQL failed to start && exit 1
+      - run:
+          name: Wait for ES startup
+          command: dockerize -wait tcp://localhost:9200 -timeout 30s
       - run:
           name: Install System Packages
           command: |
             sudo apt-get update -y && sudo apt-get install -y \
+            cron \
+            git \
+            gzip \
             libbz2-dev \
             libfreetype6-dev \
             libicu-dev \
@@ -27,66 +48,114 @@ jobs:
             libsodium-dev \
             libssh2-1-dev \
             libxslt1-dev \
-            libzip-dev
+            libzip-dev \
+            lsof \
+            default-mysql-client \
+            vim \
+            zip \
+            zlib1g-dev \
+            sendmail \
+            procps \
+            nginx
       - run:
           name: Install PHP Packages
           command: |
             sudo docker-php-ext-install \
             sysvshm \
             xsl
+            sudo composer self-update
       - run:
-          name: Update composer
-          command: |
-            sudo composer self-update --2
-      - restore_cache:
-          keys:
-            - composer-v2-{{ checksum "composer.json" }}
-      - run:
-          name: Add composer config
+          name: Composer Configure
           command: |
             composer config -g http-basic.repo.magento.com $MAGENTO_REPO_KEY $MAGENTO_REPO_SECRET
             composer config -g http-basic.repo.packagist.com "token" $GENE_PACKAGIST_TOKEN
+            composer config -g allow-plugins true
       - run:
-          name: Composer install
+          name: Composer Create Project
           command: |
-            composer install --prefer-source --no-interaction
-      - save_cache:
-          key: composer-v2-{{ checksum "composer.json" }}
-          paths:
-            - vendor
-      - node/install
-      - node/install-packages:
-          pkg-manager: npm
+            php -d memory_limit=-1 /usr/local/bin/composer create-project --no-interaction --repository-url=https://repo.magento.com/ magento/project-community-edition=2.4.6 . --no-install --no-plugins
+            php -d memory_limit=-1 /usr/local/bin/composer require --no-update colinmollenhour/php-redis-session-abstract:"<v1.6.0"
       - run:
-          name: Get GitHub PR base name
+          name: Composer Install
+          environment:
+            COMPOSER_ALLOW_SUPERUSER: 1
           command: |
-            echo 'export ESLINT_PLUGIN_DIFF_COMMIT=$(gh pr view --jq .baseRefName --json baseRefName)' >> "$BASH_ENV"
+            composer install --prefer-source --no-interaction --dev
       - run:
-          name: Run ESLint if on PR
+          name: Install Module @ CI Build Branch/Commit
           command: |
-              if [[ $ESLINT_PLUGIN_DIFF_COMMIT ]]; then
-                npx eslint .
-              else
-                echo "Skip - not triggered from PR."
-              fi
+            composer config repositories.gene-packages '{"type": "composer", "url": "https://repo.packagist.com/gene/", "canonical": false}'
+            composer config minimum-stability dev
+            composer config prefer-stable true
+            composer require gene/module-better-checkout-fastlane:dev-${CIRCLE_BRANCH}#${CIRCLE_SHA1} --no-interaction
       - run:
-          name: Run PHPCS
-          command: >-
-            ./vendor/bin/phpcs --config-set installed_paths vendor/magento/magento-coding-standard,vendor/phpcompatibility/php-compatibility &&
-            ./vendor/bin/phpcs . --standard=Magento2 --ignore=vendor,*.css,Test,node_modules --extensions=php,phtml
-      - run:
-          name: Run PHPStan
+          name: Install Magento
           command: |
-            ./vendor/bin/phpstan analyse
+            php -d memory_limit=-1 bin/magento setup:install \
+            --base-url=http://m2build.test/ \
+            --db-host=127.0.0.1 \
+            --db-name=m2build \
+            --db-user=root \
+            --db-password=root \
+            --admin-firstname=Admin \
+            --admin-lastname=User \
+            --admin-email=admin@gene.co.uk \
+            --admin-user=admin \
+            --admin-password=password1 \
+            --language=en_GB \
+            --currency=GBP \
+            --timezone=Europe/London \
+            --cleanup-database \
+            --sales-order-increment-prefix="ORD$" \
+            --session-save=db \
+            --use-rewrites=1 \
+            --search-engine=elasticsearch7 \
+            --elasticsearch-host=127.0.0.1 \
+            --elasticsearch-port=9200 \
+            --elasticsearch-enable-auth=0 \
+            --elasticsearch-index-prefix="local" \
+            --elasticsearch-timeout=15
       - run:
-          name: Configure PHPUnit
-          command: >-
-            mkdir -p ~/phpunit &&
-            ./vendor/bin/phpunit -v --debug --log-junit ~/phpunit/junit.xml
+          name: DI Compile
+          command: php -d memory_limit=-1 bin/magento setup:di:compile
+      - run:
+          name: Install composer modules within Better Checkout
+          command: |
+            composer install --working-dir=vendor/gene/module-better-checkout-fastlane  --dev
+      - run:
+          name: PHPCS
+          command: |
+            ./vendor/bin/phpcs vendor/gene/module-better-checkout-fastlane --standard=Magento2 --ignore=vendor,*.css,Test --extensions=php --colors -s -p -v --runtime-set installed_paths vendor/magento/magento-coding-standard,vendor/magento/php-compatibility-fork
+      - run:
+          name: PHPStan
+          working_directory: ./vendor/gene/module-better-checkout-fastlane
+          command: ./vendor/bin/phpstan analyse . --configuration=./phpstan.neon
+      - run:
+          name: Configure PHPunit
+          working_directory: ./vendor/gene/module-better-checkout-fastlane
+          command: |
+            mkdir -p ~/phpunit
+      - run:
+          name: PHPUnit
+          working_directory: ./vendor/gene/module-better-checkout-fastlane
+          command: ./vendor/bin/phpunit -c phpunit.xml
       - store_test_results:
           path: ~/phpunit
       - store_artifacts:
           path: ~/phpunit
+      - run:
+          name: NPM install to root module
+          command: npm --prefix vendor/gene/module-better-checkout-fastlane i
+      - run:
+          name: NPM install to checkout app
+          command: npm --prefix vendor/gene/module-better-checkout-fastlane/view/frontend/web/js/checkout i
+      - run:
+          name: ESLint run against root module
+          command: npm --prefix vendor/gene/module-better-checkout-fastlane run lint
+      - run:
+          name: ESLint run against checkout app
+          command: npm --prefix vendor/gene/module-better-checkout-fastlane/view/frontend/web/js/checkout run lint
+
 workflows:
   build-test:
     jobs:
