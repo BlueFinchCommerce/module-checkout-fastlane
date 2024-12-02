@@ -198,7 +198,7 @@ export default defineStore('fastlaneStore', {
       customerStore.setAddressAsCustom('shipping');
 
       const isValid = validationStore.validateAddress('shipping', true)
-        && validationStore.validationStore.validateField(
+        && validationStore.validateField(
           'shipping',
           'postcode',
           true,
