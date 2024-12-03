@@ -24,5 +24,9 @@
     ~ .braintree-drop-in .braintree-card {
       display: none;
     }
+
+    [class^="hcf"] {
+      background-color: transparent;
+    }
   }
 }

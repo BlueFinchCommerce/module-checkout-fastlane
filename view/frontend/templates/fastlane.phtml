@@ -13,8 +13,8 @@
     window.geneCheckout.overrides = window.geneCheckout.overrides || {};
     window.geneCheckout.paymentMethodsPrimary = window.geneCheckout.paymentMethodsPrimary || {};
 
-    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.js')) ?>";
-    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.js')) ?>";
+    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js')) ?>";
+    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js')) ?>";
 </script>
 
 <link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />

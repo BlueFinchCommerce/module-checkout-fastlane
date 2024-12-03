@@ -20,3 +20,6 @@
 #gene-better-checkout-root .fastlane-payment ~ .braintree-drop-in .braintree-card {
   display: none;
 }
+#gene-better-checkout-root .fastlane-payment [class^=hcf] {
+  background-color: transparent;
+}

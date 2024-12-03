@@ -95,7 +95,9 @@ export default {
           RadioButton,
           Recaptcha,
         },
-        stores: { usePaymentStore, useRecaptchaStore },
+        stores: {
+          useCartStore, useConfigStore, usePaymentStore, useRecaptchaStore,
+        },
       },
     } = await import(window.geneCheckout.main);
 
@@ -106,8 +108,13 @@ export default {
     this.Recaptcha = Recaptcha;
     this.PrivacyPolicy = PrivacyPolicy;
 
+    const cartStore = useCartStore();
+    const configStore = useConfigStore();
     const paymentStore = usePaymentStore();
     const recaptchaStore = useRecaptchaStore();
+
+    await configStore.getInitialConfig();
+    await cartStore.getCart();
 
     this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
     this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
