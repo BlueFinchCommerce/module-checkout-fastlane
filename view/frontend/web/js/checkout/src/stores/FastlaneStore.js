@@ -2,7 +2,10 @@ import { defineStore } from 'pinia';
 
 import debounce from 'lodash.debounce';
 
+import getAllowedBrands from '../helpers/getAllowedBrands';
+import getAllowedLocations from '../helpers/getAllowedLocations';
 import mapAddress from '../helpers/mapAddress';
+import mapAddressToFastlane from '../helpers/mapAddressToFastlane';
 
 export default defineStore('fastlaneStore', {
   state: () => ({
@@ -12,6 +15,7 @@ export default defineStore('fastlaneStore', {
     },
     clientInstance: null,
     threeDSecureInstance: null,
+    customerContextId: null,
     dataCollectorInstance: null,
     fastlaneInstance: null,
     fastlanePaymentComponent: null,
@@ -30,6 +34,7 @@ export default defineStore('fastlaneStore', {
       const files = [
         'https://js.braintreegateway.com/web/3.104.0/js/client.min.js',
         'https://js.braintreegateway.com/web/3.104.0/js/data-collector.min.js',
+        'https://js.braintreegateway.com/web/3.104.0/js/three-d-secure.min.js',
         'https://js.braintreegateway.com/web/3.104.0/js/fastlane.min.js',
       ];
       const promises = [];
@@ -82,6 +87,12 @@ export default defineStore('fastlaneStore', {
         this.setData({ dataCollectorInstance });
 
         const fastlaneInstance = await window.braintree.fastlane.create({
+          cardOptions: {
+            allowedBrands: await getAllowedBrands(),
+          },
+          shippingAddressOptions: {
+            allowedLocations: await getAllowedLocations(),
+          },
           authorization: clientToken,
           client: clientInstance,
           deviceData: dataCollectorInstance.deviceData,
@@ -145,6 +156,7 @@ export default defineStore('fastlaneStore', {
       } = await this.$state.fastlaneInstance.identity.lookupCustomerByEmail(email);
 
       this.setData({
+        customerContextId,
         profileData: null,
       });
 
@@ -186,9 +198,14 @@ export default defineStore('fastlaneStore', {
 
     async handleShippingAddress(shippingAddress) {
       const {
-        default: { stores: { useCustomerStore, useStepsStore, useValidationStore } },
+        default: {
+          stores: {
+            useCustomerStore, useStepsStore, useShippingMethodsStore, useValidationStore,
+          },
+        },
       } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
+      const shippingMethodsStore = useShippingMethodsStore();
       const validationStore = useValidationStore();
 
       customerStore.setEmailEntered();
@@ -215,25 +232,7 @@ export default defineStore('fastlaneStore', {
         return;
       }
 
-      this.getShippingMethods();
-    },
-
-    async getShippingMethods() {
-      const {
-        default: { stores: { useShippingMethodsStore, useStepsStore } },
-      } = await import(window.geneCheckout.main);
-      const shippingMethodsStore = useShippingMethodsStore();
-      const stepsStore = useStepsStore();
-
-      shippingMethodsStore.clearShippingMethodCache();
-      await shippingMethodsStore.getShippingMethods();
-
-      if (!shippingMethodsStore.shippingMethods.length) {
-        stepsStore.goToShipping();
-        return;
-      }
-
-      stepsStore.goToPayment();
+      shippingMethodsStore.setAddressesOnCart();
     },
 
     async renderFastlanePaymentComponent(selector) {
@@ -242,11 +241,13 @@ export default defineStore('fastlaneStore', {
           default: {
             stores: {
               useCartStore,
+              useCustomerStore,
             },
           },
         } = await import(window.geneCheckout.main);
-        
+
         const cartStore = useCartStore();
+        const customerStore = useCustomerStore();
 
         const fields = {
           phoneNumber: {
@@ -255,13 +256,19 @@ export default defineStore('fastlaneStore', {
           },
         };
 
+        if (!this.$state.customerContextId) {
+          await this.lookupUser(customerStore.customer.email);
+        }
+
+        const shippingAddress = mapAddressToFastlane(cartStore.cart.shipping_addresses[0]);
+
         // Add the card holder name field if enabled in config.
         if (this.$state.config.paypal_fastlane_show_cardholder_name) {
           fields.cardholderName = {};
         }
 
         const fastlanePaymentComponent = await this.$state.fastlaneInstance
-          .FastlanePaymentComponent({ fields });
+          .FastlanePaymentComponent({ fields, shippingAddress });
 
         fastlanePaymentComponent.render(selector);
 
@@ -277,10 +284,10 @@ export default defineStore('fastlaneStore', {
           },
         },
       } = await import(window.geneCheckout.main);
-      
+
       const agreementStore = useAgreementStore();
       const agreementsValid = agreementStore.validateAgreements();
-      
+
       if (!this.$state.fastlanePaymentComponent || !agreementsValid) {
         return;
       }
@@ -387,33 +394,33 @@ export default defineStore('fastlaneStore', {
     handleThreeDS(nonce) {
       return new Promise((resolve, reject) => {
         import(window.geneCheckout.main)
-          .then(async ({
-                         default: {
-                           helpers: {
-                             deepClone,
-                           },
-                           stores: {useBraintreeStore, useCartStore, useCustomerStore},
-                         },
-                       }) => {
+          .then(({
+            default: {
+              helpers: {
+                deepClone,
+              },
+              stores: { useBraintreeStore, useCartStore, useCustomerStore },
+            },
+          }) => {
             const braintreeStore = useBraintreeStore();
             const cartStore = useCartStore();
             const customerStore = useCustomerStore();
-  
+
             // If 3DS is disabled, skip over this step.
             if (!braintreeStore.threeDSEnabled) {
               resolve(nonce);
               return;
             }
-  
+
             const billingAddress = deepClone(customerStore.selected.billing);
             billingAddress.countryCodeAlpha2 = billingAddress.country_code;
             billingAddress.region = billingAddress.region.region_code
               || billingAddress.region.region;
-  
+
             const price = cartStore.cartGrandTotal / 100;
             const threshold = braintreeStore.threeDSThresholdAmount;
             const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
-  
+
             const threeDSecureParameters = {
               amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
               nonce,
@@ -425,46 +432,46 @@ export default defineStore('fastlaneStore', {
               },
             };
 
-            this.$state.threeDSecureInstance = await window.braintree.threeDSecure
-              .create({
-                version: 2,
-                client: this.$state.clientInstance,
-              });
-  
-            this.$state.threeDSecureInstance.verifyCard(
+            const threeDSecureInstance = braintreeStore.$state.threeDSecureInstance ||
+              window.braintree.threeDSecure
+                .create({
+                  version: 2,
+                  client: this.$state.clientInstance,
+                });
+
+            this.$state.threeDSecureInstance = threeDSecureInstance;
+
+            threeDSecureInstance.verifyCard(
               threeDSecureParameters,
-              (err, threeDSResponse) => {
-                if (err) {
-                  if (err.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
-                    const errorMessage = err.details.originalError.details
-                      .originalError.error.message;
-                    const message = 'Please update the address and try again.';
-                    if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
-                      return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
-                    }
-                    if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
-                      return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
-                    }
+            ).then((threeDSResponse) => {
+              const liability = {
+                shifted: threeDSResponse.liabilityShifted,
+                shiftPossible: threeDSResponse.liabilityShiftPossible,
+              };
+
+              if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
+                resolve(threeDSResponse.nonce);
+              } else {
+                reject(new Error('Please try again with another form of payment.'));
+              }
+
+              return true;
+            })
+              .catch((error) => {
+                if (error.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
+                  const errorMessage = error.details.originalError.details
+                    .originalError.error.message;
+                  const message = 'Please update the address and try again.';
+                  if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
+                    return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
                   }
-                  return reject(err);
+                  if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
+                    return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
+                  }
                 }
-      
-                const liability = {
-                  shifted: threeDSResponse.liabilityShifted,
-                  shiftPossible: threeDSResponse.liabilityShiftPossible,
-                };
-      
-                if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
-                  resolve(threeDSResponse.nonce);
-                } else {
-                  reject(new Error('Please try again with another form of payment.'));
-                }
-      
-                return true;
-              },
-            );
-          })
-          .catch(reject);
+                return reject(error);
+              });
+          });
       });
     },
 
