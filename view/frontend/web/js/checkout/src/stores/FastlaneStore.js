@@ -237,9 +237,20 @@ export default defineStore('fastlaneStore', {
 
     async renderFastlanePaymentComponent(selector) {
       if (this.$state.fastlaneInstance) {
+        const {
+          default: {
+            stores: {
+              useCartStore,
+            },
+          },
+        } = await import(window.geneCheckout.main);
+        
+        const cartStore = useCartStore();
+
         const fields = {
           phoneNumber: {
-            prefill: this.$state.profileData?.shippingAddress?.phoneNumber || '',
+            prefill: this.$state.profileData?.shippingAddress?.phoneNumber
+              || cartStore.cart?.shipping_addresses[0]?.telephone,
           },
         };
 
@@ -258,7 +269,18 @@ export default defineStore('fastlaneStore', {
     },
 
     async createPayment() {
-      if (!this.$state.fastlanePaymentComponent) {
+      const {
+        default: {
+          stores: {
+            useAgreementStore,
+          },
+        },
+      } = await import(window.geneCheckout.main);
+      
+      const agreementStore = useAgreementStore();
+      const agreementsValid = agreementStore.validateAgreements();
+      
+      if (!this.$state.fastlanePaymentComponent || !agreementsValid) {
         return;
       }
 
