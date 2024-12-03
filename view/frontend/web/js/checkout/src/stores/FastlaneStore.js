@@ -11,6 +11,7 @@ export default defineStore('fastlaneStore', {
       paypal_fastlane_is_active: false,
     },
     clientInstance: null,
+    threeDSecureInstance: null,
     dataCollectorInstance: null,
     fastlaneInstance: null,
     fastlanePaymentComponent: null,
@@ -386,33 +387,33 @@ export default defineStore('fastlaneStore', {
     handleThreeDS(nonce) {
       return new Promise((resolve, reject) => {
         import(window.geneCheckout.main)
-          .then(({
-                   default: {
-                     helpers: {
-                       deepClone,
-                     },
-                     stores: { useBraintreeStore, useCartStore, useCustomerStore },
-                   },
-                 }) => {
+          .then(async ({
+                         default: {
+                           helpers: {
+                             deepClone,
+                           },
+                           stores: {useBraintreeStore, useCartStore, useCustomerStore},
+                         },
+                       }) => {
             const braintreeStore = useBraintreeStore();
             const cartStore = useCartStore();
             const customerStore = useCustomerStore();
-
+  
             // If 3DS is disabled, skip over this step.
-            if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
+            if (!braintreeStore.threeDSEnabled) {
               resolve(nonce);
               return;
             }
-
+  
             const billingAddress = deepClone(customerStore.selected.billing);
             billingAddress.countryCodeAlpha2 = billingAddress.country_code;
             billingAddress.region = billingAddress.region.region_code
               || billingAddress.region.region;
-
+  
             const price = cartStore.cartGrandTotal / 100;
             const threshold = braintreeStore.threeDSThresholdAmount;
             const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
-
+  
             const threeDSecureParameters = {
               amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
               nonce,
@@ -424,7 +425,13 @@ export default defineStore('fastlaneStore', {
               },
             };
 
-            braintreeStore.threeDSecureInstance.verifyCard(
+            this.$state.threeDSecureInstance = await window.braintree.threeDSecure
+              .create({
+                version: 2,
+                client: this.$state.clientInstance,
+              });
+  
+            this.$state.threeDSecureInstance.verifyCard(
               threeDSecureParameters,
               (err, threeDSResponse) => {
                 if (err) {
@@ -441,18 +448,18 @@ export default defineStore('fastlaneStore', {
                   }
                   return reject(err);
                 }
-
+      
                 const liability = {
                   shifted: threeDSResponse.liabilityShifted,
                   shiftPossible: threeDSResponse.liabilityShiftPossible,
                 };
-
+      
                 if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
                   resolve(threeDSResponse.nonce);
                 } else {
                   reject(new Error('Please try again with another form of payment.'));
                 }
-
+      
                 return true;
               },
             );
