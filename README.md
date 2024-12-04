@@ -24,7 +24,7 @@ For information about a module installation in Adobe Commerce, see [Enable or di
 
 Remember to clear any appropriate caches.
 
-Once installed the module follows the same configuration settings as prescribed by the official rvvup integration documentation, see [Fastlane for Magento](https://commercemarketplace.adobe.com/media/catalog/product/paypal-module-fastlane-1-0-0-ece/user_guides.pdf?1732698229).
+Once installed the module follows the same configuration settings as prescribed by the official Fastlane integration documentation, see [Fastlane for Magento](https://commercemarketplace.adobe.com/media/catalog/product/paypal-module-fastlane-1-0-0-ece/user_guides.pdf?1732698229).
 
 ## CircleCi
 
