@@ -363,6 +363,7 @@ export default defineStore('fastlaneStore', {
         paymentMethod: {
           method: 'braintree',
           additional_data: {
+            fastlane:  this.$state.profileData ? 'Yes' : 'No',
             payment_method_nonce: id,
             is_active_payment_token_enabler: false,
           },
