@@ -4,6 +4,9 @@
  * @var \Magento\Framework\Escaper $escaper
  * @var \Gene\BetterCheckout\ViewModel\Assets $assetViewModel
  */
+
+ $watermarkComponent = $block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js');
+ $paymentMethodComponent = $block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.js');
 ?>
 
 <script>
@@ -13,8 +16,8 @@
     window.geneCheckout.overrides = window.geneCheckout.overrides || {};
     window.geneCheckout.paymentMethodsPrimary = window.geneCheckout.paymentMethodsPrimary || {};
 
-    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js')) ?>";
-    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js')) ?>";
+    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($watermarkComponent) ?>";
+    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
 </script>
 
 <link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />

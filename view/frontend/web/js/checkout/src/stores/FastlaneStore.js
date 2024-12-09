@@ -387,13 +387,13 @@ export default defineStore('fastlaneStore', {
       return new Promise((resolve, reject) => {
         import(window.geneCheckout.main)
           .then(({
-                   default: {
-                     helpers: {
-                       deepClone,
-                     },
-                     stores: { useBraintreeStore, useCartStore, useCustomerStore },
-                   },
-                 }) => {
+            default: {
+              helpers: {
+                deepClone,
+              },
+              stores: { useBraintreeStore, useCartStore, useCustomerStore },
+            },
+          }) => {
             const braintreeStore = useBraintreeStore();
             const cartStore = useCartStore();
             const customerStore = useCustomerStore();
