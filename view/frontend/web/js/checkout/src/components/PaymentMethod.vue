@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="config.paypal_fastlane_is_active && MyButton"
+    v-if="config.paypal_fastlane_is_active && MyButton && !userLoggedIn"
     class="fastlane-payment"
     :class="{ active: isMethodSelected }"
   >
@@ -68,6 +68,7 @@ export default {
       PrivacyPolicy: null,
       RadioButton: null,
       Recaptcha: null,
+      userLoggedIn: false,
     };
   },
   computed: {
@@ -96,7 +97,7 @@ export default {
           Recaptcha,
         },
         stores: {
-          useCartStore, useConfigStore, usePaymentStore, useRecaptchaStore,
+          useCartStore, useConfigStore, usePaymentStore, useRecaptchaStore, useCustomerStore,
         },
       },
     } = await import(window.geneCheckout.main);
@@ -112,33 +113,37 @@ export default {
     const configStore = useConfigStore();
     const paymentStore = usePaymentStore();
     const recaptchaStore = useRecaptchaStore();
+    const customerStore = useCustomerStore();
 
-    await configStore.getInitialConfig();
-    await cartStore.getCart();
+    this.userLoggedIn = customerStore.isLoggedIn;
+    if (!this.userLoggedIn) {
+      await configStore.getInitialConfig();
+      await cartStore.getCart();
 
-    this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
-    this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
+      this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
+      this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
-    paymentStore.$subscribe((mutation) => {
-      if (typeof mutation.payload !== 'undefined'
-        && typeof mutation.payload.errorMessage !== 'undefined') {
-        this.errorMessage = mutation.payload.errorMessage;
-      }
-    });
+      paymentStore.$subscribe((mutation) => {
+        if (typeof mutation.payload !== 'undefined'
+          && typeof mutation.payload.errorMessage !== 'undefined') {
+          this.errorMessage = mutation.payload.errorMessage;
+        }
+      });
 
-    this.errorMessage = paymentStore.errorMessage;
+      this.errorMessage = paymentStore.errorMessage;
 
-    paymentStore.$subscribe((mutation) => {
-      if (typeof mutation.payload.selectedMethod !== 'undefined') {
-        this.selectedMethod = mutation.payload.selectedMethod;
-      }
-    });
+      paymentStore.$subscribe((mutation) => {
+        if (typeof mutation.payload.selectedMethod !== 'undefined') {
+          this.selectedMethod = mutation.payload.selectedMethod;
+        }
+      });
 
-    await this.setup();
+      await this.setup();
 
-    this.renderFastlanePaymentComponent(`#${this.id}`);
+      this.renderFastlanePaymentComponent(`#${this.id}`);
 
-    this.selectFastlane();
+      this.selectFastlane();
+    }
   },
 
   methods: {
