@@ -20,7 +20,6 @@ export default async (address) => {
       firstname: address.firstName,
       lastname: address.lastName,
     };
-  } else {
-    return  {};
   }
+  return {};
 };
