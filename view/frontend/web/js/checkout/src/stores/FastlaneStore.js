@@ -104,7 +104,7 @@ export default defineStore('fastlaneStore', {
               authorization: clientToken,
               client: clientInstance,
               deviceData: dataCollectorInstance.deviceData,
-              platform: 'BT'
+              platform: 'BT',
             },
           });
           this.setData({ fastlaneInstance });
@@ -558,7 +558,7 @@ export default defineStore('fastlaneStore', {
       }
 
       this.setData({
-        fastlaneInstance: null
+        fastlaneInstance: null,
       });
     },
 
