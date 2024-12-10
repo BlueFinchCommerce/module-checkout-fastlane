@@ -529,11 +529,11 @@ export default defineStore('fastlaneStore', {
         const { default: { stores: { useStepsStore } } } = await import(window.geneCheckout.main);
         const stepsStore = useStepsStore();
 
-        if (this.profileData) {
+        if (this.profileData && this.$state.fastlaneInstance) {
           const {
             selectionChanged,
             selectedAddress,
-          } = await this.fastlaneInstance.profile.showShippingAddressSelector();
+          } = await this.$state.fastlaneInstance.profile.showShippingAddressSelector();
 
           if (selectionChanged) {
             this.handleShippingAddress(selectedAddress);
