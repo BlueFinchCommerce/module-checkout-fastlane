@@ -100,6 +100,12 @@ export default defineStore('fastlaneStore', {
             authorization: clientToken,
             client: clientInstance,
             deviceData: dataCollectorInstance.deviceData,
+            platformOptions: {
+              authorization: clientToken,
+              client: clientInstance,
+              deviceData: dataCollectorInstance.deviceData,
+              platform: 'BT'
+            },
           });
           this.setData({ fastlaneInstance });
 
@@ -279,7 +285,9 @@ export default defineStore('fastlaneStore', {
           await this.lookupUser(customerStore.customer.email);
         }
 
-        const shippingAddress = mapAddressToFastlane(cartStore.cart.shipping_addresses[0]);
+        const shippingAddress = cartStore.cart.shipping_addresses[0]
+          ? mapAddressToFastlane(cartStore.cart.shipping_addresses[0])
+          : {};
 
         // Add the card holder name field if enabled in config.
         if (this.$state.config.paypal_fastlane_show_cardholder_name) {
@@ -534,6 +542,24 @@ export default defineStore('fastlaneStore', {
           stepsStore.goToYouDetails();
         }
       };
+    },
+
+    unmountComponent() {
+      this.clearCaches(['setup']);
+
+      if (this.$state.clientInstance) {
+        this.$state.clientInstance.teardown();
+      }
+      if (this.$state.threeDSecureInstance) {
+        this.$state.threeDSecureInstance.teardown();
+      }
+      if (this.$state.dataCollectorInstance) {
+        this.$state.dataCollectorInstance.teardown();
+      }
+
+      this.setData({
+        fastlaneInstance: null
+      });
     },
 
     getCachedResponse(request, cacheKey, args = {}) {

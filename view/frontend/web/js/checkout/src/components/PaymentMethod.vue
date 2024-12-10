@@ -147,7 +147,12 @@ export default {
   },
 
   methods: {
-    ...mapActions(useFastlaneStore, ['createPayment', 'renderFastlanePaymentComponent', 'setup']),
+    ...mapActions(useFastlaneStore, [
+      'createPayment',
+      'renderFastlanePaymentComponent',
+      'setup',
+      'unmountComponent',
+    ]),
 
     async selectFastlane() {
       this.isMethodSelected = true;
@@ -156,6 +161,9 @@ export default {
       const paymentStore = usePaymentStore();
       paymentStore.selectPaymentMethod('fastlane');
     },
+  },
+  unmounted() {
+    this.unmountComponent();
   },
 };
 
