@@ -30,7 +30,7 @@
     <component :is="PrivacyPolicy" v-if="isMethodSelected" />
     <component
       :is="Recaptcha"
-      v-if="getTypeByPlacement('braintree')"
+      v-if="isMethodSelected && getTypeByPlacement('braintree')"
       id="braintree"
       location="fastlane"
     />
@@ -59,7 +59,7 @@ export default {
       id: 'fastlanePaymentComponent',
       isMethodSelected: false,
       selectedMethod: 'fastlane',
-      getTypeByPlacement: false,
+      getTypeByPlacement: null,
       paymentTitle: '',
       paymentType: 'fastlane',
       Agreements: null,
@@ -120,7 +120,9 @@ export default {
       await configStore.getInitialConfig();
       await cartStore.getCart();
 
-      this.getTypeByPlacement = recaptchaStore.getTypeByPlacement;
+      const { getTypeByPlacement } = recaptchaStore.getTypeByPlacement;
+      this.getTypeByPlacement = () => getTypeByPlacement;
+
       this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
       paymentStore.$subscribe((mutation) => {
