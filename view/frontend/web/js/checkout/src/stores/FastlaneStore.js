@@ -222,9 +222,13 @@ export default defineStore('fastlaneStore', {
 
           const result = await getShippingMethods(mappedAddress);
           const methods = result.shipping_addresses[0].available_shipping_methods;
-          await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
 
-          stepsStore.goToPayment();
+          if (methods) {
+            await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+            stepsStore.goToPayment();
+          } else {
+            stepsStore.goToShipping();
+          }
         }
       }
 
