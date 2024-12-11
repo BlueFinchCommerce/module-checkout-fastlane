@@ -584,9 +584,6 @@ export default defineStore('fastlaneStore', {
       if (this.$state.clientInstance) {
         this.$state.clientInstance.teardown();
       }
-      if (this.$state.threeDSecureInstance) {
-        this.$state.threeDSecureInstance.teardown();
-      }
       if (this.$state.dataCollectorInstance) {
         this.$state.dataCollectorInstance.teardown();
       }
