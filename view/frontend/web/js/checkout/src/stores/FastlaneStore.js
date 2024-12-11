@@ -161,15 +161,23 @@ export default defineStore('fastlaneStore', {
       this.isLookingUpUser = true;
 
       const {
-        default: {
-          stores: {
-            useLoadingStore,
-            useStepsStore,
+        default:
+          {
+            stores: {
+              useLoadingStore,
+              useStepsStore,
+              useShippingMethodsStore,
+              useConfigStore,
+            },
+            services: {
+              getShippingMethods,
+            },
           },
-        },
       } = await import(window.geneCheckout.main);
       const loadingStore = useLoadingStore();
       const stepsStore = useStepsStore();
+      const shippingMethodsStore = useShippingMethodsStore();
+      const configStore = useConfigStore();
 
       loadingStore.setLoadingState(true);
 
@@ -194,6 +202,28 @@ export default defineStore('fastlaneStore', {
         if (profileData) {
           await this.setProfileData(profileData, email);
           await this.handleShippingAddress(profileData.shippingAddress);
+
+          const address = profileData.shippingAddress;
+          const mappedAddress = {
+            id: null,
+            street: [
+              address.streetAddress,
+            ],
+            city: address.locality,
+            region: address.region,
+            region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
+            country_code: address.countryCodeAlpha2,
+            postcode: address.postalCode,
+            company: address.company !== 'undefined' ? address.company : '',
+            telephone: address.phoneNumber,
+            firstname: address.firstName,
+            lastname: address.lastName,
+          };
+
+          const result = await getShippingMethods(mappedAddress);
+          const methods = result.shipping_addresses[0].available_shipping_methods;
+          await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+
           stepsStore.goToPayment();
         }
       }
@@ -317,7 +347,7 @@ export default defineStore('fastlaneStore', {
       const recaptchStore = useRecaptchaStore();
 
       const agreementsValid = agreementStore.validateAgreements();
-      const recaptchaValid = await recaptchStore.validateToken('placeOrder');
+      const recaptchaValid = await recaptchStore.validateToken('braintree', 'fastlane');
 
       if (!this.$state.fastlanePaymentComponent || !agreementsValid || !recaptchaValid) {
         return;
