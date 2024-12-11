@@ -30,7 +30,7 @@
     <component :is="PrivacyPolicy" v-if="isMethodSelected" />
     <component
       :is="Recaptcha"
-      v-if="isMethodSelected && getTypeByPlacement('braintree')"
+      v-show="getTypeByPlacement('braintree')"
       id="braintree"
       location="fastlane"
     />
