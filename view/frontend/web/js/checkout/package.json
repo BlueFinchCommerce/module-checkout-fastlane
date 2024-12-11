@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rollup -c rollup.config.js",
+    "build-watch": "rollup -c rollup.config.js --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint --quiet --ext .js,.vue src",
     "lint-fix": "eslint --quiet --ext .js,.vue src --fix"

@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="config.paypal_fastlane_is_active && MyButton"
+    v-if="config.paypal_fastlane_is_active && MyButton && !userLoggedIn"
     class="fastlane-payment"
     :class="{ active: isMethodSelected }"
   >
@@ -30,7 +30,7 @@
     <component :is="PrivacyPolicy" v-if="isMethodSelected" />
     <component
       :is="Recaptcha"
-      v-if="isMethodSelected && isRecaptchaVisible('placeOrder')"
+      v-if="getTypeByPlacement('placeOrder')"
       id="placeOrder"
       location="fastlane"
     />
@@ -59,7 +59,7 @@ export default {
       id: 'fastlanePaymentComponent',
       isMethodSelected: false,
       selectedMethod: 'fastlane',
-      isRecaptchaVisible: false,
+      getTypeByPlacement: false,
       paymentTitle: '',
       paymentType: 'fastlane',
       Agreements: null,
@@ -68,6 +68,7 @@ export default {
       PrivacyPolicy: null,
       RadioButton: null,
       Recaptcha: null,
+      userLoggedIn: false,
     };
   },
   computed: {
@@ -95,7 +96,9 @@ export default {
           RadioButton,
           Recaptcha,
         },
-        stores: { usePaymentStore, useRecaptchaStore },
+        stores: {
+          useCartStore, useConfigStore, usePaymentStore, useRecaptchaStore, useCustomerStore,
+        },
       },
     } = await import(window.geneCheckout.main);
 
@@ -106,36 +109,50 @@ export default {
     this.Recaptcha = Recaptcha;
     this.PrivacyPolicy = PrivacyPolicy;
 
+    const cartStore = useCartStore();
+    const configStore = useConfigStore();
     const paymentStore = usePaymentStore();
     const recaptchaStore = useRecaptchaStore();
+    const customerStore = useCustomerStore();
 
-    this.isRecaptchaVisible = recaptchaStore.isRecaptchaVisible;
-    this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
+    this.userLoggedIn = customerStore.isLoggedIn;
+    if (!this.userLoggedIn) {
+      await configStore.getInitialConfig();
+      await cartStore.getCart();
 
-    paymentStore.$subscribe((mutation) => {
-      if (typeof mutation.payload !== 'undefined'
-        && typeof mutation.payload.errorMessage !== 'undefined') {
-        this.errorMessage = mutation.payload.errorMessage;
-      }
-    });
+      this.getTypeByPlacement = recaptchaStore.getTypeByPlacement;
+      this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
-    this.errorMessage = paymentStore.errorMessage;
+      paymentStore.$subscribe((mutation) => {
+        if (typeof mutation.payload !== 'undefined'
+          && typeof mutation.payload.errorMessage !== 'undefined') {
+          this.errorMessage = mutation.payload.errorMessage;
+        }
+      });
 
-    paymentStore.$subscribe((mutation) => {
-      if (typeof mutation.payload.selectedMethod !== 'undefined') {
-        this.selectedMethod = mutation.payload.selectedMethod;
-      }
-    });
+      this.errorMessage = paymentStore.errorMessage;
 
-    await this.setup();
+      paymentStore.$subscribe((mutation) => {
+        if (typeof mutation.payload.selectedMethod !== 'undefined') {
+          this.selectedMethod = mutation.payload.selectedMethod;
+        }
+      });
 
-    this.renderFastlanePaymentComponent(`#${this.id}`);
+      await this.setup();
 
-    this.selectFastlane();
+      this.renderFastlanePaymentComponent(`#${this.id}`);
+
+      this.selectFastlane();
+    }
   },
 
   methods: {
-    ...mapActions(useFastlaneStore, ['createPayment', 'renderFastlanePaymentComponent', 'setup']),
+    ...mapActions(useFastlaneStore, [
+      'createPayment',
+      'renderFastlanePaymentComponent',
+      'setup',
+      'unmountComponent',
+    ]),
 
     async selectFastlane() {
       this.isMethodSelected = true;
@@ -144,6 +161,9 @@ export default {
       const paymentStore = usePaymentStore();
       paymentStore.selectPaymentMethod('fastlane');
     },
+  },
+  unmounted() {
+    this.unmountComponent();
   },
 };
 

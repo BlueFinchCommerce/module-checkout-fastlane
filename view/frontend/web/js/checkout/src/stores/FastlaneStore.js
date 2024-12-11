@@ -2,7 +2,10 @@ import { defineStore } from 'pinia';
 
 import debounce from 'lodash.debounce';
 
+import getAllowedBrands from '../helpers/getAllowedBrands';
+import getAllowedLocations from '../helpers/getAllowedLocations';
 import mapAddress from '../helpers/mapAddress';
+import mapAddressToFastlane from '../helpers/mapAddressToFastlane';
 
 export default defineStore('fastlaneStore', {
   state: () => ({
@@ -11,6 +14,8 @@ export default defineStore('fastlaneStore', {
       paypal_fastlane_is_active: false,
     },
     clientInstance: null,
+    threeDSecureInstance: null,
+    customerContextId: null,
     dataCollectorInstance: null,
     fastlaneInstance: null,
     fastlanePaymentComponent: null,
@@ -29,6 +34,7 @@ export default defineStore('fastlaneStore', {
       const files = [
         'https://js.braintreegateway.com/web/3.104.0/js/client.min.js',
         'https://js.braintreegateway.com/web/3.104.0/js/data-collector.min.js',
+        'https://js.braintreegateway.com/web/3.104.0/js/three-d-secure.min.js',
         'https://js.braintreegateway.com/web/3.104.0/js/fastlane.min.js',
       ];
       const promises = [];
@@ -51,44 +57,63 @@ export default defineStore('fastlaneStore', {
     },
 
     async setup() {
-      return this.getCachedResponse(async () => {
-        await this.getConfiguration();
+      const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
+      const customerStore = useCustomerStore();
 
-        // Early return if Fastlane is not active.
-        if (!this.$state.config.paypal_fastlane_is_active) {
-          return;
-        }
+      if (!customerStore.isLoggedIn) {
+        return this.getCachedResponse(async () => {
+          await this.getConfiguration();
 
-        await this.addRequiredJs();
-        window.localStorage.setItem('axoEnv', 'sandbox');
+          // Early return if Fastlane is not active.
+          if (!this.$state.config.paypal_fastlane_is_active) {
+            return;
+          }
 
-        const {
-          default: { stores: { useBraintreeStore } },
-        } = await import(window.geneCheckout.main);
-        const braintreeStore = useBraintreeStore();
+          await this.addRequiredJs();
+          window.localStorage.setItem('axoEnv', 'sandbox');
 
-        await braintreeStore.createClientToken();
-        const { clientToken } = braintreeStore;
+          const {
+            default: { stores: { useBraintreeStore } },
+          } = await import(window.geneCheckout.main);
+          const braintreeStore = useBraintreeStore();
 
-        const clientInstance = await window.braintree.client.create({
-          authorization: clientToken,
-        });
-        this.setData({ clientInstance });
+          await braintreeStore.createClientToken();
+          const { clientToken } = braintreeStore;
 
-        const dataCollectorInstance = await window.braintree.dataCollector.create({
-          client: clientInstance,
-        });
-        this.setData({ dataCollectorInstance });
+          const clientInstance = await window.braintree.client.create({
+            authorization: clientToken,
+          });
+          this.setData({ clientInstance });
 
-        const fastlaneInstance = await window.braintree.fastlane.create({
-          authorization: clientToken,
-          client: clientInstance,
-          deviceData: dataCollectorInstance.deviceData,
-        });
-        this.setData({ fastlaneInstance });
+          const dataCollectorInstance = await window.braintree.dataCollector.create({
+            client: clientInstance,
+          });
+          this.setData({ dataCollectorInstance });
 
-        this.overrideGoToYouDetails();
-      }, 'setup');
+          const fastlaneInstance = await window.braintree.fastlane.create({
+            cardOptions: {
+              allowedBrands: await getAllowedBrands(),
+            },
+            shippingAddressOptions: {
+              allowedLocations: await getAllowedLocations(),
+            },
+            authorization: clientToken,
+            client: clientInstance,
+            deviceData: dataCollectorInstance.deviceData,
+            platformOptions: {
+              authorization: clientToken,
+              client: clientInstance,
+              deviceData: dataCollectorInstance.deviceData,
+              platform: 'BT',
+            },
+          });
+          this.setData({ fastlaneInstance });
+
+          this.overrideGoToYouDetails();
+        }, 'setup');
+      }
+
+      return undefined;
     },
 
     async getConfiguration() {
@@ -100,6 +125,7 @@ export default defineStore('fastlaneStore', {
         'paypal_fastlane_show_cardholder_name',
         'paypal_fastlane_insights_enabled',
         'paypal_fastlane_client_id',
+        'paypal_fastlane_policy_active',
       ];
 
       const config = await getStoreConfig(configs);
@@ -134,8 +160,16 @@ export default defineStore('fastlaneStore', {
 
       this.isLookingUpUser = true;
 
-      const { default: { stores: { useLoadingStore } } } = await import(window.geneCheckout.main);
+      const {
+        default: {
+          stores: {
+            useLoadingStore,
+            useStepsStore,
+          },
+        },
+      } = await import(window.geneCheckout.main);
       const loadingStore = useLoadingStore();
+      const stepsStore = useStepsStore();
 
       loadingStore.setLoadingState(true);
 
@@ -144,11 +178,14 @@ export default defineStore('fastlaneStore', {
       } = await this.$state.fastlaneInstance.identity.lookupCustomerByEmail(email);
 
       this.setData({
+        customerContextId,
         profileData: null,
       });
 
       // If we have do have an account then trigger the authentication.
       if (customerContextId) {
+        document.activeElement.blur();
+
         const {
           profileData,
         } = await this.$state.fastlaneInstance
@@ -157,6 +194,7 @@ export default defineStore('fastlaneStore', {
         if (profileData) {
           await this.setProfileData(profileData, email);
           await this.handleShippingAddress(profileData.shippingAddress);
+          stepsStore.goToPayment();
         }
       }
 
@@ -185,9 +223,14 @@ export default defineStore('fastlaneStore', {
 
     async handleShippingAddress(shippingAddress) {
       const {
-        default: { stores: { useCustomerStore, useStepsStore, useValidationStore } },
+        default: {
+          stores: {
+            useCustomerStore, useStepsStore, useShippingMethodsStore, useValidationStore,
+          },
+        },
       } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
+      const shippingMethodsStore = useShippingMethodsStore();
       const validationStore = useValidationStore();
 
       customerStore.setEmailEntered();
@@ -214,25 +257,7 @@ export default defineStore('fastlaneStore', {
         return;
       }
 
-      this.getShippingMethods();
-    },
-
-    async getShippingMethods() {
-      const {
-        default: { stores: { useShippingMethodsStore, useStepsStore } },
-      } = await import(window.geneCheckout.main);
-      const shippingMethodsStore = useShippingMethodsStore();
-      const stepsStore = useStepsStore();
-
-      shippingMethodsStore.clearShippingMethodCache();
-      await shippingMethodsStore.getShippingMethods();
-
-      if (!shippingMethodsStore.shippingMethods.length) {
-        stepsStore.goToShipping();
-        return;
-      }
-
-      stepsStore.goToPayment();
+      shippingMethodsStore.setAddressesOnCart();
     },
 
     async renderFastlanePaymentComponent(selector) {
@@ -241,11 +266,13 @@ export default defineStore('fastlaneStore', {
           default: {
             stores: {
               useCartStore,
+              useCustomerStore,
             },
           },
         } = await import(window.geneCheckout.main);
-        
+
         const cartStore = useCartStore();
+        const customerStore = useCustomerStore();
 
         const fields = {
           phoneNumber: {
@@ -254,13 +281,21 @@ export default defineStore('fastlaneStore', {
           },
         };
 
+        if (!this.$state.customerContextId) {
+          await this.lookupUser(customerStore.customer.email);
+        }
+
+        const shippingAddress = cartStore.cart.shipping_addresses[0]
+          ? mapAddressToFastlane(cartStore.cart.shipping_addresses[0])
+          : {};
+
         // Add the card holder name field if enabled in config.
         if (this.$state.config.paypal_fastlane_show_cardholder_name) {
           fields.cardholderName = {};
         }
 
         const fastlanePaymentComponent = await this.$state.fastlaneInstance
-          .FastlanePaymentComponent({ fields });
+          .FastlanePaymentComponent({ fields, shippingAddress });
 
         fastlanePaymentComponent.render(selector);
 
@@ -273,14 +308,18 @@ export default defineStore('fastlaneStore', {
         default: {
           stores: {
             useAgreementStore,
+            useRecaptchaStore,
           },
         },
       } = await import(window.geneCheckout.main);
-      
+
       const agreementStore = useAgreementStore();
+      const recaptchStore = useRecaptchaStore();
+
       const agreementsValid = agreementStore.validateAgreements();
-      
-      if (!this.$state.fastlanePaymentComponent || !agreementsValid) {
+      const recaptchaValid = await recaptchStore.validateToken('placeOrder');
+
+      if (!this.$state.fastlanePaymentComponent || !agreementsValid || !recaptchaValid) {
         return;
       }
 
@@ -355,6 +394,7 @@ export default defineStore('fastlaneStore', {
         paymentMethod: {
           method: 'braintree',
           additional_data: {
+            fastlane: this.$state.profileData ? 'Yes' : 'No',
             payment_method_nonce: id,
             is_active_payment_token_enabler: false,
           },
@@ -399,7 +439,7 @@ export default defineStore('fastlaneStore', {
             const customerStore = useCustomerStore();
 
             // If 3DS is disabled, skip over this step.
-            if (!braintreeStore.threeDSEnabled || !braintreeStore.threeDSecureInstance) {
+            if (!braintreeStore.threeDSEnabled) {
               resolve(nonce);
               return;
             }
@@ -424,40 +464,46 @@ export default defineStore('fastlaneStore', {
               },
             };
 
-            braintreeStore.threeDSecureInstance.verifyCard(
+            const threeDSecureInstance = braintreeStore.$state.threeDSecureInstance
+              || window.braintree.threeDSecure
+                .create({
+                  version: 2,
+                  client: this.$state.clientInstance,
+                });
+
+            this.$state.threeDSecureInstance = threeDSecureInstance;
+
+            threeDSecureInstance.verifyCard(
               threeDSecureParameters,
-              (err, threeDSResponse) => {
-                if (err) {
-                  if (err.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
-                    const errorMessage = err.details.originalError.details
-                      .originalError.error.message;
-                    const message = 'Please update the address and try again.';
-                    if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
-                      return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
-                    }
-                    if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
-                      return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
-                    }
+            ).then((threeDSResponse) => {
+              const liability = {
+                shifted: threeDSResponse.liabilityShifted,
+                shiftPossible: threeDSResponse.liabilityShiftPossible,
+              };
+
+              if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
+                resolve(threeDSResponse.nonce);
+              } else {
+                reject(new Error('Please try again with another form of payment.'));
+              }
+
+              return true;
+            })
+              .catch((error) => {
+                if (error.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
+                  const errorMessage = error.details.originalError.details
+                    .originalError.error.message;
+                  const message = 'Please update the address and try again.';
+                  if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
+                    return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
                   }
-                  return reject(err);
+                  if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
+                    return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
+                  }
                 }
-
-                const liability = {
-                  shifted: threeDSResponse.liabilityShifted,
-                  shiftPossible: threeDSResponse.liabilityShiftPossible,
-                };
-
-                if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
-                  resolve(threeDSResponse.nonce);
-                } else {
-                  reject(new Error('Please try again with another form of payment.'));
-                }
-
-                return true;
-              },
-            );
-          })
-          .catch(reject);
+                return reject(error);
+              });
+          });
       });
     },
 
@@ -483,11 +529,11 @@ export default defineStore('fastlaneStore', {
         const { default: { stores: { useStepsStore } } } = await import(window.geneCheckout.main);
         const stepsStore = useStepsStore();
 
-        if (this.profileData) {
+        if (this.profileData && this.$state.fastlaneInstance) {
           const {
             selectionChanged,
             selectedAddress,
-          } = await this.fastlaneInstance.profile.showShippingAddressSelector();
+          } = await this.$state.fastlaneInstance.profile.showShippingAddressSelector();
 
           if (selectionChanged) {
             this.handleShippingAddress(selectedAddress);
@@ -496,6 +542,24 @@ export default defineStore('fastlaneStore', {
           stepsStore.goToYouDetails();
         }
       };
+    },
+
+    unmountComponent() {
+      this.clearCaches(['setup']);
+
+      if (this.$state.clientInstance) {
+        this.$state.clientInstance.teardown();
+      }
+      if (this.$state.threeDSecureInstance) {
+        this.$state.threeDSecureInstance.teardown();
+      }
+      if (this.$state.dataCollectorInstance) {
+        this.$state.dataCollectorInstance.teardown();
+      }
+
+      this.setData({
+        fastlaneInstance: null,
+      });
     },
 
     getCachedResponse(request, cacheKey, args = {}) {

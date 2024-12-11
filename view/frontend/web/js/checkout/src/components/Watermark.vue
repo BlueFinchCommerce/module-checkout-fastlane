@@ -1,6 +1,7 @@
 <template>
   <div
-    v-if="config.paypal_fastlane_is_active"
+    v-if="config.paypal_fastlane_is_active
+      && config.paypal_fastlane_policy_active && !userLoggedIn"
     :id="id">
     <img :alt="id" src="https://www.paypalobjects.com/fastlane-v1/assets/fastlane-with-tooltip_en_sm_light.0808.svg" />
   </div>
@@ -16,6 +17,7 @@ export default {
   data() {
     return {
       id: 'fastlaneEmailWatermark',
+      userLoggedIn: false,
     };
   },
 
@@ -24,10 +26,22 @@ export default {
   },
 
   async mounted() {
-    await this.setup();
-    this.attachEmailListener();
+    const {
+      default: {
+        stores: { useCustomerStore },
+      },
+    } = await import(window.geneCheckout.main);
+    const customerStore = useCustomerStore();
+    this.userLoggedIn = customerStore.isLoggedIn;
 
-    this.renderWatermark(`#${this.id}`);
+    if (!this.userLoggedIn) {
+      await this.setup();
+      this.attachEmailListener();
+
+      if (this.config.paypal_fastlane_is_active && this.config.paypal_fastlane_policy_active) {
+        this.renderWatermark(`#${this.id}`);
+      }
+    }
   },
 
   methods: {
