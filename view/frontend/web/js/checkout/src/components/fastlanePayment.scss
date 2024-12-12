@@ -8,7 +8,8 @@
     margin-top: var(--indent__base);
     padding: var(--indent__base);
 
-    .recaptcha-container {
+    .recaptcha-container,
+    .error-message {
       display: none;
     }
 
@@ -20,7 +21,8 @@
       background-color: var(--radio-input-wrapper__background-color-active);
       border: var(--selected-border, var(--radio-input-wrapper__border-weight-active) var(--base__border-style) var(--radio-input-wrapper__border-color-active));
 
-      .recaptcha-container {
+      .recaptcha-container,
+      .error-message {
         display: block;
       }
     }
