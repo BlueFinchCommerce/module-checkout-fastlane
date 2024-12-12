@@ -7,12 +7,18 @@
   margin-top: var(--indent__base);
   padding: var(--indent__base);
 }
+#gene-better-checkout-root .fastlane-payment .recaptcha-container {
+  display: none;
+}
 #gene-better-checkout-root .fastlane-payment .fastlane-payment-radio span {
   font-size: var(--font-size__s);
 }
 #gene-better-checkout-root .fastlane-payment.active {
   background-color: var(--radio-input-wrapper__background-color-active);
   border: var(--selected-border, var(--radio-input-wrapper__border-weight-active) var(--base__border-style) var(--radio-input-wrapper__border-color-active));
+}
+#gene-better-checkout-root .fastlane-payment.active .recaptcha-container {
+  display: block;
 }
 #gene-better-checkout-root .fastlane-payment .hidden {
   display: none;
