@@ -8,6 +8,10 @@
     margin-top: var(--indent__base);
     padding: var(--indent__base);
 
+    .recaptcha-container {
+      display: none;
+    }
+
     .fastlane-payment-radio span {
       font-size: var(--font-size__s);
     }
@@ -15,6 +19,10 @@
     &.active {
       background-color: var(--radio-input-wrapper__background-color-active);
       border: var(--selected-border, var(--radio-input-wrapper__border-weight-active) var(--base__border-style) var(--radio-input-wrapper__border-color-active));
+
+      .recaptcha-container {
+        display: block;
+      }
     }
 
     .hidden {

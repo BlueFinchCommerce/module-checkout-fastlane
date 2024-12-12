@@ -32,8 +32,7 @@
       :is="Recaptcha"
       v-show="getTypeByPlacement('braintree')"
       id="braintree"
-      location="fastlane"
-    />
+      location="fastlane" />
     <component
       :is="MyButton"
       v-if="isMethodSelected"
@@ -120,7 +119,7 @@ export default {
       await configStore.getInitialConfig();
       await cartStore.getCart();
 
-      const { getTypeByPlacement } = recaptchaStore.getTypeByPlacement;
+      const getTypeByPlacement = recaptchaStore.getTypeByPlacement;
       this.getTypeByPlacement = () => getTypeByPlacement;
 
       this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
@@ -132,6 +131,7 @@ export default {
         }
       });
 
+      paymentStore.setPaymentErrorMessage('');
       this.errorMessage = paymentStore.errorMessage;
 
       paymentStore.$subscribe((mutation) => {
