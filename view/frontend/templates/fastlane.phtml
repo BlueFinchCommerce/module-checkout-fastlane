@@ -4,9 +4,9 @@
  * @var \Magento\Framework\Escaper $escaper
  * @var \Gene\BetterCheckout\ViewModel\Assets $assetViewModel
  */
-
- $watermarkComponent = $block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js');
- $paymentMethodComponent = $block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js');
+ $assetViewModel = $block->getAssetViewModel();
+ $watermarkComponent = $assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js');
+ $paymentMethodComponent = $assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js');
 ?>
 
 <script>
@@ -20,4 +20,4 @@
     window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
 </script>
 
-<link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($block->getViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />
+<link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />
