@@ -30,7 +30,7 @@
     <component :is="PrivacyPolicy" v-if="isMethodSelected" />
     <component
       :is="Recaptcha"
-      v-show="getTypeByPlacement('braintree')"
+      v-show="getTypeByPlacement"
       id="braintree"
       location="fastlane" />
     <component
@@ -119,9 +119,7 @@ export default {
       await configStore.getInitialConfig();
       await cartStore.getCart();
 
-      const { getTypeByPlacement } = recaptchaStore.getTypeByPlacement;
-      this.getTypeByPlacement = () => getTypeByPlacement;
-
+      this.getTypeByPlacement = recaptchaStore.getTypeByPlacement('braintree');
       this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
 
       paymentStore.$subscribe((mutation) => {

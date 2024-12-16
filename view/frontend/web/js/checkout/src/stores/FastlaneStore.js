@@ -204,30 +204,33 @@ export default defineStore('fastlaneStore', {
           await this.handleShippingAddress(profileData.shippingAddress);
 
           const address = profileData.shippingAddress;
-          const mappedAddress = {
-            id: null,
-            street: [
-              address.streetAddress,
-            ],
-            city: address.locality,
-            region: address.region,
-            region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
-            country_code: address.countryCodeAlpha2,
-            postcode: address.postalCode,
-            company: address.company !== 'undefined' ? address.company : '',
-            telephone: address.phoneNumber,
-            firstname: address.firstName,
-            lastname: address.lastName,
-          };
+          let mappedAddress;
+          if (address) {
+            mappedAddress = {
+              id: null,
+              street: [
+                address.streetAddress,
+              ],
+              city: address.locality,
+              region: address.region,
+              region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
+              country_code: address.countryCodeAlpha2,
+              postcode: address.postalCode,
+              company: address.company !== 'undefined' ? address.company : '',
+              telephone: address.phoneNumber,
+              firstname: address.firstName,
+              lastname: address.lastName,
+            };
 
-          const result = await getShippingMethods(mappedAddress);
-          const methods = result.shipping_addresses[0].available_shipping_methods;
+            const result = await getShippingMethods(mappedAddress);
+            const methods = result.shipping_addresses[0].available_shipping_methods;
 
-          if (methods.length) {
-            await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
-            stepsStore.goToPayment();
-          } else {
-            stepsStore.goToShipping();
+            if (methods.length) {
+              await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+              stepsStore.goToPayment();
+            } else {
+              stepsStore.goToShipping();
+            }
           }
         }
       }
