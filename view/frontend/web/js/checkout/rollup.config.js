@@ -3,6 +3,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import multiInput from 'rollup-plugin-multi-input';
 import commonjs from '@rollup/plugin-commonjs';
+import del from 'rollup-plugin-delete';
 import scss from 'rollup-plugin-scss';
 import svg from 'rollup-plugin-svg';
 import terser from '@rollup/plugin-terser';
@@ -24,6 +25,7 @@ export default {
       transformOutputPath: (output, input) => `${output.replace(/(.+)+(.js|.vue)/, '$1.min$2')}`,
     }),
     commonjs(),
+    del({ targets: 'dist/*' }),
     scss({ output: 'dist/styles.css' }),
     svg(),
     terser(),

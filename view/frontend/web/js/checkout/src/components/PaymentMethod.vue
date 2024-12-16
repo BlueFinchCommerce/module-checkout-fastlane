@@ -119,7 +119,7 @@ export default {
       await configStore.getInitialConfig();
       await cartStore.getCart();
 
-      const getTypeByPlacement = recaptchaStore.getTypeByPlacement;
+      const { getTypeByPlacement } = recaptchaStore.getTypeByPlacement;
       this.getTypeByPlacement = () => getTypeByPlacement;
 
       this.paymentTitle = paymentStore.getPaymentMethodTitle('braintree');
