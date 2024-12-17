@@ -28,6 +28,10 @@
   },
   "repositories": [
       {
+        "type": "path",
+        "url": "./dev/composerstub/papyal-module-fastlane"
+      },
+      {
           "type": "composer",
           "url": "https://repo.magento.com/"
       },
