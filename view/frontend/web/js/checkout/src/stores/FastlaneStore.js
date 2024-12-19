@@ -464,13 +464,13 @@ export default defineStore('fastlaneStore', {
       return new Promise((resolve, reject) => {
         import(window.geneCheckout.main)
           .then(async ({
-                         default: {
-                           helpers: {
-                             deepClone,
-                           },
-                           stores: {useBraintreeStore, useCartStore, useCustomerStore},
-                         },
-                       }) => {
+            default: {
+              helpers: {
+                deepClone,
+              },
+              stores: { useBraintreeStore, useCartStore, useCustomerStore },
+            },
+          }) => {
             const braintreeStore = useBraintreeStore();
             const cartStore = useCartStore();
             const customerStore = useCustomerStore();
@@ -507,7 +507,7 @@ export default defineStore('fastlaneStore', {
                   version: 2,
                   client: this.$state.clientInstance,
                 });
-  
+
             this.$state.threeDSecureInstance = await threeDSecureInstance;
 
             this.$state.threeDSecureInstance.verifyCard(
