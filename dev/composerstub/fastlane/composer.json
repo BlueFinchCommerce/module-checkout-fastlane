@@ -5,4 +5,5 @@
         "psr-4": {
             "PayPal\\Fastlane\\": ""
         }
-    }}
+    }
+}
