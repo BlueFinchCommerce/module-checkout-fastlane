@@ -1,8 +1,8 @@
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/bluefinchcommerce/module-better-checkout-fastlane/tree/main.svg?style=svg&circle-token=CCIPRJ_XkqiX9NgSAReaDw3gwjonp_bc029db56d2b5c7f5b3cb46c3a47224d5f225094)](https://dl.circleci.com/status-badge/redirect/gh/bluefinchcommerce/module-better-checkout-fastlane/tree/main)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/bluefinchcommerce/module-checkout-fastlane/tree/main.svg?style=svg&circle-token=CCIPRJ_XkqiX9NgSAReaDw3gwjonp_bc029db56d2b5c7f5b3cb46c3a47224d5f225094)](https://dl.circleci.com/status-badge/redirect/gh/bluefinchcommerce/module-checkout-fastlane/tree/main)
 
 ![Checkout Powered by BlueFinch](./assets/logo.svg)
 
-# Better Checkout Fastlane Module
+# Checkout Fastlane Module
 
 ## Requirements
 
@@ -12,13 +12,13 @@
 
 ## Installation
 
-Ensure you have installed the latest version of BlueFinch Checkout, which can be found here, [BlueFinch Checkout](https://github.com/bluefinchcommerce/module-better-checkout).
+Ensure you have installed the latest version of BlueFinch Checkout, which can be found here, [BlueFinch Checkout](https://github.com/bluefinchcommerce/module-checkout).
 
-To install the Better Checkout Fastlane module, run the following command in your Magento 2 root directory:
+To install the Checkout Fastlane module, run the following command in your Magento 2 root directory:
 
-``` composer require bluefinch/module-better-checkout-fastlane:^1.0 ```
+``` composer require bluefinch/module-checkout-fastlane:^1.0 ```
 
-Better Checkout Fastlane follows the standard installation process for Adobe Commerce.
+Checkout Fastlane follows the standard installation process for Adobe Commerce.
 
 For information about a module installation in Adobe Commerce, see [Enable or disable modules](https://experienceleague.adobe.com/en/docs/commerce-operations/installation-guide/tutorials/manage-modules).
 
