@@ -2,12 +2,12 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <!-- Add Better Checkout Fastlane Extension -->
-        <referenceContainer name="gene.better.checkout.container">
-            <block name="gene.better.checkout.fastlane"
-                   template="Gene_BetterCheckoutFastlane::fastlane.phtml" after="-"
+        <referenceContainer name="bluefinch.checkout.container">
+            <block name="bluefinch.checkout.fastlane"
+                   template="BlueFinch_CheckoutFastlane::fastlane.phtml" after="-"
                    ifconfig="payment/fastlane/is_active">
                 <arguments>
-                    <argument name="asset_view_model" xsi:type="object">Gene\BetterCheckout\ViewModel\Assets</argument>
+                    <argument name="asset_view_model" xsi:type="object">BlueFinch\Checkout\ViewModel\Assets</argument>
                 </arguments>
             </block>
         </referenceContainer>

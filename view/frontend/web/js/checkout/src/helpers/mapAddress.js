@@ -1,5 +1,5 @@
 export default async (address) => {
-  const { default: { stores: { useConfigStore } } } = await import(window.geneCheckout.main);
+  const { default: { stores: { useConfigStore } } } = await import(window.bluefinchCheckout.main);
   const configStore = useConfigStore();
 
   if (address) {

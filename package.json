@@ -1,5 +1,5 @@
 {
-  "name": "gene-better-checkout-fastlane",
+  "name": "bluefinch-checkout-fastlane",
   "version": "1.0.0",
   "description": "## What is this?",
   "main": "index.js",
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/genecommerce/module-better-checkout-fastlane.git"
+    "url": "git+https://github.com/bluefinchcommerce/module-better-checkout-fastlane.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/genecommerce/module-better-checkout-fastlane/issues"
+    "url": "https://github.com/bluefinchcommerce/module-better-checkout-fastlane/issues"
   },
-  "homepage": "https://github.com/genecommerce/module-better-checkout-fastlane#readme",
+  "homepage": "https://github.com/bluefinchcommerce/module-better-checkout-fastlane#readme",
   "devDependencies": {
     "eslint": "^8"
   }
