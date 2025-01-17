@@ -161,15 +161,23 @@ export default defineStore('fastlaneStore', {
       this.isLookingUpUser = true;
 
       const {
-        default: {
-          stores: {
-            useLoadingStore,
-            useStepsStore,
+        default:
+          {
+            stores: {
+              useLoadingStore,
+              useStepsStore,
+              useShippingMethodsStore,
+              useConfigStore,
+            },
+            services: {
+              getShippingMethods,
+            },
           },
-        },
       } = await import(window.geneCheckout.main);
       const loadingStore = useLoadingStore();
       const stepsStore = useStepsStore();
+      const shippingMethodsStore = useShippingMethodsStore();
+      const configStore = useConfigStore();
 
       loadingStore.setLoadingState(true);
 
@@ -194,7 +202,36 @@ export default defineStore('fastlaneStore', {
         if (profileData) {
           await this.setProfileData(profileData, email);
           await this.handleShippingAddress(profileData.shippingAddress);
-          stepsStore.goToPayment();
+
+          const address = profileData.shippingAddress;
+          let mappedAddress;
+          if (address) {
+            mappedAddress = {
+              id: null,
+              street: [
+                address.streetAddress,
+              ],
+              city: address.locality,
+              region: address.region,
+              region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
+              country_code: address.countryCodeAlpha2,
+              postcode: address.postalCode,
+              company: address.company !== 'undefined' ? address.company : '',
+              telephone: address.phoneNumber,
+              firstname: address.firstName,
+              lastname: address.lastName,
+            };
+
+            const result = await getShippingMethods(mappedAddress);
+            const methods = result.shipping_addresses[0].available_shipping_methods;
+
+            if (methods.length) {
+              await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+              stepsStore.goToPayment();
+            } else {
+              stepsStore.goToShipping();
+            }
+          }
         }
       }
 
@@ -317,7 +354,7 @@ export default defineStore('fastlaneStore', {
       const recaptchStore = useRecaptchaStore();
 
       const agreementsValid = agreementStore.validateAgreements();
-      const recaptchaValid = await recaptchStore.validateToken('placeOrder');
+      const recaptchaValid = await recaptchStore.validateToken('braintree', 'fastlane');
 
       if (!this.$state.fastlanePaymentComponent || !agreementsValid || !recaptchaValid) {
         return;
@@ -426,7 +463,7 @@ export default defineStore('fastlaneStore', {
     handleThreeDS(nonce) {
       return new Promise((resolve, reject) => {
         import(window.geneCheckout.main)
-          .then(({
+          .then(async ({
             default: {
               helpers: {
                 deepClone,
@@ -471,9 +508,9 @@ export default defineStore('fastlaneStore', {
                   client: this.$state.clientInstance,
                 });
 
-            this.$state.threeDSecureInstance = threeDSecureInstance;
+            this.$state.threeDSecureInstance = await threeDSecureInstance;
 
-            threeDSecureInstance.verifyCard(
+            this.$state.threeDSecureInstance.verifyCard(
               threeDSecureParameters,
             ).then((threeDSResponse) => {
               const liability = {
@@ -549,9 +586,6 @@ export default defineStore('fastlaneStore', {
 
       if (this.$state.clientInstance) {
         this.$state.clientInstance.teardown();
-      }
-      if (this.$state.threeDSecureInstance) {
-        this.$state.threeDSecureInstance.teardown();
       }
       if (this.$state.dataCollectorInstance) {
         this.$state.dataCollectorInstance.teardown();

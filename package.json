@@ -4,19 +4,19 @@
   "description": "## What is this?",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint ."
+    "lint": "eslint . --rulesdir ./vendor/magento/magento-coding-standard/eslint/rules",
+    "lint-fix": "eslint . --rulesdir ./vendor/magento/magento-coding-standard/eslint/rules --fix"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/genecommerce/template-module.git"
+    "url": "git+https://github.com/genecommerce/module-better-checkout-fastlane.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/genecommerce/template-module/issues"
+    "url": "https://github.com/genecommerce/module-better-checkout-fastlane/issues"
   },
-  "homepage": "https://github.com/genecommerce/template-module#readme",
+  "homepage": "https://github.com/genecommerce/module-better-checkout-fastlane#readme",
   "devDependencies": {
     "eslint": "^8"
   }

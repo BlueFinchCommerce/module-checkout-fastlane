@@ -13,8 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "lodash.debounce": "^4.0.8",
     "pinia": "^2.1.7",
-    "lodash.debounce": "^4.0.8"
+    "vue": "^3.4.20"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -24,13 +25,13 @@
     "@vue/eslint-config-airbnb": "^8.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-jest": "^28.2.0",
-    "eslint-plugin-vue": "^9.25.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "rollup": "^4.14.3",
+    "rollup-plugin-delete": "^2.1.0",
     "rollup-plugin-multi-input": "^1.4.1",
     "rollup-plugin-scss": "^3.0.0",
-    "rollup": "^4.14.3",
     "rollup-plugin-svg": "^2.0.0",
     "rollup-plugin-vue": "^6.0.0",
-    "sass": "^1.75.0",
-    "vue": "^3.4.20"
+    "sass": "^1.75.0"
   }
 }
