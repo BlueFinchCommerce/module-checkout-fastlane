@@ -1,5 +1,5 @@
 {
-  "name": "bluefinch/module-checkout-fastlane",
+  "name": "bluefinchcommerce/module-checkout-fastlane",
   "description": "",
   "type": "magento2-module",
   "autoload": {
@@ -15,7 +15,7 @@
     "magento/framework": "*",
     "magento/module-checkout": "*",
     "magento/module-quote": "*",
-    "bluefinch/module-checkout": "^1.0"
+    "bluefinchcommerce/module-checkout": "^1.0"
   },
   "require-dev": {
     "magento/magento-coding-standard": "*",
@@ -32,7 +32,7 @@
       },
       {
           "type": "composer",
-          "url": "https://repo.packagist.com/bluefinch/"
+          "url": "https://repo.packagist.com/bluefinchcommerce/"
       }
   ],
   "authors": [
