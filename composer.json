@@ -1,5 +1,5 @@
 {
-  "name": "gene/module-better-checkout-fastlane",
+  "name": "bluefinchcommerce/module-checkout-fastlane",
   "description": "",
   "type": "magento2-module",
   "autoload": {
@@ -7,14 +7,14 @@
       "registration.php"
     ],
     "psr-4": {
-      "Gene\\BetterCheckoutFastlane\\": ""
+      "BlueFinch\\CheckoutFastlane\\": ""
     }
   },
   "require": {
     "magento/framework": "*",
     "magento/module-checkout": "*",
     "magento/module-quote": "*",
-    "gene/module-better-checkout": "^1.0",
+    "bluefinchcommerce/module-checkout": "^1.0",
     "paypal/module-fastlane": "^1.0"
   },
   "require-dev": {
@@ -32,7 +32,7 @@
     },
     "checkout": {
       "type": "git",
-      "url": "https://github.com/genecommerce/module-better-checkout"
+      "url": "https://github.com/BlueFinchCommerce/module-checkout"
     },
     "stub": {
       "type": "path",

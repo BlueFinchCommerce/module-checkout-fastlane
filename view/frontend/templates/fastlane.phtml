@@ -2,22 +2,22 @@
 /**
  * @var \Magento\Framework\View\Element\Template $block
  * @var \Magento\Framework\Escaper $escaper
- * @var \Gene\BetterCheckout\ViewModel\Assets $assetViewModel
+ * @var \BlueFinch\Checkout\ViewModel\Assets $assetViewModel
  */
  $assetViewModel = $block->getAssetViewModel();
- $watermarkComponent = $assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/Watermark.min.js');
- $paymentMethodComponent = $assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js');
+ $watermarkComponent = $assetViewModel->getDistViewFileUrl('BlueFinch_CheckoutFastlane::js/checkout/dist/components/Watermark.min.js');
+ $paymentMethodComponent = $assetViewModel->getDistViewFileUrl('BlueFinch_CheckoutFastlane::js/checkout/dist/components/PaymentMethod.min.js');
 ?>
 
 <script>
-    window.geneCheckout = window.geneCheckout || {};
+    window.bluefinchCheckout = window.bluefinchCheckout || {};
 
-    window.geneCheckout.belowEmailFields = window.geneCheckout.belowEmailFields || {};
-    window.geneCheckout.overrides = window.geneCheckout.overrides || {};
-    window.geneCheckout.paymentMethodsPrimary = window.geneCheckout.paymentMethodsPrimary || {};
+    window.bluefinchCheckout.belowEmailFields = window.bluefinchCheckout.belowEmailFields || {};
+    window.bluefinchCheckout.overrides = window.bluefinchCheckout.overrides || {};
+    window.bluefinchCheckout.paymentMethodsPrimary = window.bluefinchCheckout.paymentMethodsPrimary || {};
 
-    window.geneCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($watermarkComponent) ?>";
-    window.geneCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
+    window.bluefinchCheckout.belowEmailFields.FastlaneEmail = "<?= $escaper->escapeJs($watermarkComponent) ?>";
+    window.bluefinchCheckout.paymentMethodsPrimary.FastlanePaymentMethod = "<?= $escaper->escapeJs($paymentMethodComponent) ?>";
 </script>
 
-<link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($assetViewModel->getDistViewFileUrl('Gene_BetterCheckoutFastlane::js/checkout/dist/styles.css')) ?>" />
+<link rel="stylesheet" href="<?= $escaper->escapeHtmlAttr($assetViewModel->getDistViewFileUrl('BlueFinch_CheckoutFastlane::js/checkout/dist/styles.css')) ?>" />

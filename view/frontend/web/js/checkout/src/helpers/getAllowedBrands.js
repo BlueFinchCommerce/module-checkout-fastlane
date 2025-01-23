@@ -1,5 +1,5 @@
 export default async () => {
-  const { default: { stores: { useBraintreeStore } } } = await import(window.geneCheckout.main);
+  const { default: { stores: { useBraintreeStore } } } = await import(window.bluefinchCheckout.main);
   const braintreeStore = useBraintreeStore();
 
   const braintreeCards = braintreeStore.cCTypes || [];
