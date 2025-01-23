@@ -16,7 +16,7 @@ Ensure you have installed the latest version of BlueFinch Checkout, which can be
 
 To install the Checkout Fastlane module, run the following command in your Magento 2 root directory:
 
-``` composer require bluefinch/module-checkout-fastlane:^1.0 ```
+``` composer require bluefinch/module-checkout-fastlane ```
 
 Checkout Fastlane follows the standard installation process for Adobe Commerce.
 
