@@ -80,6 +80,7 @@ jobs:
           command: |
             REPODIR=$(realpath ~/project)
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
+            composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
             composer config "repositories.3" "{\"type\": \"vcs\", \"url\": \"https://github.com/BlueFinchCommerce/module-checkout\"}"
             composer config minimum-stability dev
             composer config prefer-stable true
