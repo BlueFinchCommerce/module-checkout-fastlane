@@ -1,0 +1,9 @@
+{
+    "name": "paypal/module-fastlane",
+    "version": "1.999.999",
+    "autoload": {
+        "psr-4": {
+            "PayPal\\Fastlane\\": ""
+        }
+    }
+}

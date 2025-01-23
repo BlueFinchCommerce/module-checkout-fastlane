@@ -11,11 +11,11 @@
     }
   },
   "require": {
-    "php": "~8.1.0||~8.2.0",
     "magento/framework": "*",
     "magento/module-checkout": "*",
     "magento/module-quote": "*",
-    "bluefinchcommerce/module-checkout": "^1.0"
+    "bluefinchcommerce/module-checkout": "^1.0",
+    "paypal/module-fastlane": "^1.0"
   },
   "require-dev": {
     "magento/magento-coding-standard": "*",
@@ -25,22 +25,20 @@
     "squizlabs/php_codesniffer": "^3.6",
     "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
   },
-  "repositories": [
-      {
-          "type": "composer",
-          "url": "https://repo.magento.com/"
-      },
-      {
-          "type": "composer",
-          "url": "https://repo.packagist.com/bluefinchcommerce/"
-      }
-  ],
-  "authors": [
-    {
-      "name": "",
-      "role": "Developer"
+  "repositories": {
+    "magento": {
+      "type": "composer",
+      "url": "https://mirror.mage-os.org/"
+    },
+    "checkout": {
+      "type": "git",
+      "url": "https://github.com/BlueFinchCommerce/module-checkout"
+    },
+    "stub": {
+      "type": "path",
+      "url": "./dev/composerstub/fastlane"
     }
-  ],
+  },
   "config": {
     "allow-plugins": {
       "magento/composer-dependency-version-audit-plugin": true,
