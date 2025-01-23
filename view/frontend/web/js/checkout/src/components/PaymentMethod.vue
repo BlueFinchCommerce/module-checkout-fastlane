@@ -99,7 +99,7 @@ export default {
           useCartStore, useConfigStore, usePaymentStore, useRecaptchaStore, useCustomerStore,
         },
       },
-    } = await import(window.geneCheckout.main);
+    } = await import(window.bluefinchCheckout.main);
 
     this.Agreements = Agreements;
     this.ErrorMessage = ErrorMessage;
@@ -157,7 +157,7 @@ export default {
     async selectFastlane() {
       this.isMethodSelected = true;
 
-      const { default: { stores: { usePaymentStore } } } = await import(window.geneCheckout.main);
+      const { default: { stores: { usePaymentStore } } } = await import(window.bluefinchCheckout.main);
       const paymentStore = usePaymentStore();
       paymentStore.selectPaymentMethod('fastlane');
     },

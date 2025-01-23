@@ -71,20 +71,20 @@ jobs:
             composer config --global github-oauth.github.com $GITHUB_CHECKOUT_TOKEN
             composer config -g allow-plugins true
       - run:
-          working_directory: ~/magento2
           name: Composer Create Project
-          command: php -d memory_limit=-1 /usr/local/bin/composer create-project --no-interaction --repository-url=https://mirror.mage-os.org/ magento/project-community-edition=2.4.7 .
-      - run:
           working_directory: ~/magento2
+          command: php -d memory_limit=-1 /usr/local/bin/composer create-project --no-interaction --repository-url=https://mirror.mage-os.org magento/project-community-edition=2.4.7 .
+      - run:
           name: Install Module @ CI Build Branch/Commit
+          working_directory: ~/magento2
           command: |
             REPODIR=$(realpath ~/project)
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
             composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
-            composer config "repositories.3" "{\"type\": \"vcs\", \"url\": \"https://github.com/genecommerce/module-better-checkout\"}"
+            composer config "repositories.3" "{\"type\": \"vcs\", \"url\": \"https://github.com/BlueFinchCommerce/module-checkout\"}"
             composer config minimum-stability dev
             composer config prefer-stable true
-            composer require gene/module-better-checkout-fastlane:dev-${CIRCLE_BRANCH} --no-interaction
+            composer require bluefinchcommerce/module-checkout-fastlane:dev-${CIRCLE_BRANCH} --no-interaction
       - run:
           name: Install Magento
           working_directory: ~/magento2
@@ -97,7 +97,7 @@ jobs:
             --db-password=root \
             --admin-firstname=Admin \
             --admin-lastname=User \
-            --admin-email=admin@gene.co.uk \
+            --admin-email=admin@bluefinch.co.uk \
             --admin-user=admin \
             --admin-password=password1 \
             --language=en_GB \
@@ -114,51 +114,51 @@ jobs:
             --elasticsearch-index-prefix="local" \
             --elasticsearch-timeout=15
       - run:
-          working_directory: ~/magento2
           name: DI Compile
+          working_directory: ~/magento2
           command: php -d memory_limit=-1 bin/magento setup:di:compile
       - run:
-          working_directory: ~/magento2/vendor/gene/module-better-checkout-fastlane
-          name: Install composer modules within Better Checkout
+          name: Install composer modules within BlueFinch Checkout
+          working_directory: ~/magento2/vendor/bluefinchcommerce/module-checkout-fastlane
           command: |
             composer install --no-interaction
       - run:
           name: PHPCS
-          working_directory: ~/magento2/vendor/gene/module-better-checkout-fastlane
+          working_directory: ~/magento2/vendor/bluefinchcommerce/module-checkout-fastlane
           command: |
             ./vendor/bin/phpcs . --standard=Magento2 --ignore=vendor,*.css,Test --extensions=php --colors -s -p -v --runtime-set installed_paths vendor/magento/magento-coding-standard,vendor/magento/php-compatibility-fork
       - run:
           name: PHPStan
-          working_directory: ~/magento2/vendor/gene/module-better-checkout-fastlane
+          working_directory: ~/magento2/vendor/bluefinchcommerce/module-checkout-fastlane
           command: ./vendor/bin/phpstan analyse . --configuration=./phpstan.neon
       - run:
           name: Configure PHPunit
-          working_directory: ~/magento2/vendor/gene/module-better-checkout-fastlane
+          working_directory: ~/magento2/vendor/bluefinchcommerce/module-checkout-fastlane
           command: |
             mkdir -p ~/phpunit
       - run:
           name: PHPUnit
-          working_directory: ~/magento2/vendor/gene/module-better-checkout-fastlane
+          working_directory: ~/magento2/vendor/bluefinchcommerce/module-checkout-fastlane
           command: ./vendor/bin/phpunit -c phpunit.xml
       - run:
           name: NPM install to root module
           working_directory: ~/magento2
-          command: npm --prefix vendor/gene/module-better-checkout-fastlane i
+          command: npm --prefix vendor/bluefinchcommerce/module-checkout-fastlane i
       - run:
           name: NPM install to checkout app
           working_directory: ~/magento2
-          command: npm --prefix vendor/gene/module-better-checkout-fastlane/view/frontend/web/js/checkout i
+          command: npm --prefix vendor/bluefinchcommerce/module-checkout-fastlane/view/frontend/web/js/checkout i
       - run:
           name: ESLint run against root module
           working_directory: ~/magento2
-          command: npm --prefix vendor/gene/module-better-checkout-fastlane run lint
+          command: npm --prefix vendor/bluefinchcommerce/module-checkout-fastlane run lint
       - run:
           name: ESLint run against checkout app
           working_directory: ~/magento2
-          command: npm --prefix vendor/gene/module-better-checkout-fastlane/view/frontend/web/js/checkout run lint
+          command: npm --prefix vendor/bluefinchcommerce/module-checkout-fastlane/view/frontend/web/js/checkout run lint
 
 workflows:
   build-test:
     jobs:
       - build:
-          context: checkout extension
+          context: bluefinch checkout extension
