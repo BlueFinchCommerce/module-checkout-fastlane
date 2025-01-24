@@ -143,12 +143,14 @@ export default defineStore('fastlaneStore', {
       const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
       const customerStore = useCustomerStore();
 
+      this.$state.email = customerStore.customer.email;
+
       const debounced = debounce(this.lookupUser, 2000);
       customerStore.$subscribe(async (mutation, payload) => {
         if (mutation.type === 'direct' && typeof payload.customer.email !== 'undefined') {
-          if (this.email !== payload.customer.email) {
+          if (this.$state.email !== payload.customer.email) {
             debounced(payload.customer.email);
-            this.email = payload.customer.email;
+            this.$state.email = payload.customer.email;
           }
         }
       });
@@ -203,11 +205,10 @@ export default defineStore('fastlaneStore', {
           .identity.triggerAuthenticationFlow(customerContextId);
 
         if (profileData) {
-          customerStore.setEmailAddress(email);
-
+          await customerStore.submitEmail(email);
           // Check to see if the User already has an address.
-          if (!this.$state.profileEmail && profileData.shippingAddress && !customerStore.selected.shipping.postcode
-            || this.$state.profileEmail && this.$state.profileEmail !== email) {
+          if ((!this.$state.profileEmail && profileData.shippingAddress && !customerStore.selected.shipping.postcode)
+            || (this.$state.profileEmail && this.$state.profileEmail !== email)) {
             await this.handleShippingAddress(profileData.shippingAddress);
 
             const address = profileData.shippingAddress;
