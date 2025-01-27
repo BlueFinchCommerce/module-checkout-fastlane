@@ -23,6 +23,7 @@ export default defineStore('fastlaneStore', {
     profileData: null,
     email: null,
     isLookingUpUser: false,
+    profileEmail: null,
   }),
   getters: {},
   actions: {
@@ -142,12 +143,14 @@ export default defineStore('fastlaneStore', {
       const { default: { stores: { useCustomerStore } } } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
 
+      this.$state.email = customerStore.customer.email;
+
       const debounced = debounce(this.lookupUser, 2000);
       customerStore.$subscribe(async (mutation, payload) => {
         if (mutation.type === 'direct' && typeof payload.customer.email !== 'undefined') {
-          if (this.email !== payload.customer.email) {
+          if (this.$state.email !== payload.customer.email) {
             debounced(payload.customer.email);
-            this.email = payload.customer.email;
+            this.$state.email = payload.customer.email;
           }
         }
       });
@@ -168,6 +171,7 @@ export default defineStore('fastlaneStore', {
               useStepsStore,
               useShippingMethodsStore,
               useConfigStore,
+              useCustomerStore,
             },
             services: {
               getShippingMethods,
@@ -178,6 +182,7 @@ export default defineStore('fastlaneStore', {
       const stepsStore = useStepsStore();
       const shippingMethodsStore = useShippingMethodsStore();
       const configStore = useConfigStore();
+      const customerStore = useCustomerStore();
 
       loadingStore.setLoadingState(true);
 
@@ -200,38 +205,45 @@ export default defineStore('fastlaneStore', {
           .identity.triggerAuthenticationFlow(customerContextId);
 
         if (profileData) {
-          await this.setProfileData(profileData, email);
-          await this.handleShippingAddress(profileData.shippingAddress);
+          await customerStore.submitEmail(email);
+          // Check to see if the User already has an address.
+          if ((!this.$state.profileEmail && profileData.shippingAddress && !customerStore.selected.shipping.postcode)
+            || (this.$state.profileEmail && this.$state.profileEmail !== email)) {
+            await this.handleShippingAddress(profileData.shippingAddress);
 
-          const address = profileData.shippingAddress;
-          let mappedAddress;
-          if (address) {
-            mappedAddress = {
-              id: null,
-              street: [
-                address.streetAddress,
-              ],
-              city: address.locality,
-              region: address.region,
-              region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
-              country_code: address.countryCodeAlpha2,
-              postcode: address.postalCode,
-              company: address.company !== 'undefined' ? address.company : '',
-              telephone: address.phoneNumber,
-              firstname: address.firstName,
-              lastname: address.lastName,
-            };
+            const address = profileData.shippingAddress;
+            let mappedAddress;
+            if (address) {
+              mappedAddress = {
+                id: null,
+                street: [
+                  address.streetAddress,
+                ],
+                city: address.locality,
+                region: address.region,
+                region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
+                country_code: address.countryCodeAlpha2,
+                postcode: address.postalCode,
+                company: address.company !== 'undefined' ? address.company : '',
+                telephone: address.phoneNumber,
+                firstname: address.firstName,
+                lastname: address.lastName,
+              };
 
-            const result = await getShippingMethods(mappedAddress);
-            const methods = result.shipping_addresses[0].available_shipping_methods;
+              const result = await getShippingMethods(mappedAddress);
+              const methods = result.shipping_addresses[0].available_shipping_methods;
 
-            if (methods.length) {
-              await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
-              stepsStore.goToPayment();
-            } else {
-              stepsStore.goToShipping();
+              if (methods.length) {
+                await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+                stepsStore.goToPayment();
+              } else {
+                stepsStore.goToShipping();
+              }
             }
           }
+
+          await this.setProfileData(profileData, email);
+          this.setData({ profileEmail: email });
         }
       }
 
