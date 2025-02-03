@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <!-- Add BlueFinch Checkout Fastlane Extension -->
+        <referenceContainer name="bluefinch.checkout.container">
+            <block name="bluefinch.checkout.fastlane"
+                   template="BlueFinch_CheckoutFastlane::fastlane.phtml" after="-"
+                   ifconfig="payment/fastlane/is_active">
+                <arguments>
+                    <argument name="asset_view_model" xsi:type="object">BlueFinch\Checkout\ViewModel\Assets</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

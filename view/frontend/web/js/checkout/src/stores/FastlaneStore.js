@@ -23,6 +23,7 @@ export default defineStore('fastlaneStore', {
     profileData: null,
     email: null,
     isLookingUpUser: false,
+    profileEmail: null,
   }),
   getters: {},
   actions: {
@@ -57,7 +58,7 @@ export default defineStore('fastlaneStore', {
     },
 
     async setup() {
-      const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
+      const { default: { stores: { useCustomerStore } } } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
 
       if (!customerStore.isLoggedIn) {
@@ -74,7 +75,7 @@ export default defineStore('fastlaneStore', {
 
           const {
             default: { stores: { useBraintreeStore } },
-          } = await import(window.geneCheckout.main);
+          } = await import(window.bluefinchCheckout.main);
           const braintreeStore = useBraintreeStore();
 
           await braintreeStore.createClientToken();
@@ -117,7 +118,7 @@ export default defineStore('fastlaneStore', {
     },
 
     async getConfiguration() {
-      const { default: { services: { getStoreConfig } } } = await import(window.geneCheckout.main);
+      const { default: { services: { getStoreConfig } } } = await import(window.bluefinchCheckout.main);
 
       const configs = [
         'paypal_fastlane_is_active',
@@ -139,15 +140,17 @@ export default defineStore('fastlaneStore', {
         return;
       }
 
-      const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
+      const { default: { stores: { useCustomerStore } } } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
+
+      this.$state.email = customerStore.customer.email;
 
       const debounced = debounce(this.lookupUser, 2000);
       customerStore.$subscribe(async (mutation, payload) => {
         if (mutation.type === 'direct' && typeof payload.customer.email !== 'undefined') {
-          if (this.email !== payload.customer.email) {
+          if (this.$state.email !== payload.customer.email) {
             debounced(payload.customer.email);
-            this.email = payload.customer.email;
+            this.$state.email = payload.customer.email;
           }
         }
       });
@@ -168,16 +171,18 @@ export default defineStore('fastlaneStore', {
               useStepsStore,
               useShippingMethodsStore,
               useConfigStore,
+              useCustomerStore,
             },
             services: {
               getShippingMethods,
             },
           },
-      } = await import(window.geneCheckout.main);
+      } = await import(window.bluefinchCheckout.main);
       const loadingStore = useLoadingStore();
       const stepsStore = useStepsStore();
       const shippingMethodsStore = useShippingMethodsStore();
       const configStore = useConfigStore();
+      const customerStore = useCustomerStore();
 
       loadingStore.setLoadingState(true);
 
@@ -200,38 +205,45 @@ export default defineStore('fastlaneStore', {
           .identity.triggerAuthenticationFlow(customerContextId);
 
         if (profileData) {
-          await this.setProfileData(profileData, email);
-          await this.handleShippingAddress(profileData.shippingAddress);
+          await customerStore.submitEmail(email);
+          // Check to see if the User already has an address.
+          if ((!this.$state.profileEmail && profileData.shippingAddress && !customerStore.selected.shipping.postcode)
+            || (this.$state.profileEmail && this.$state.profileEmail !== email)) {
+            await this.handleShippingAddress(profileData.shippingAddress);
 
-          const address = profileData.shippingAddress;
-          let mappedAddress;
-          if (address) {
-            mappedAddress = {
-              id: null,
-              street: [
-                address.streetAddress,
-              ],
-              city: address.locality,
-              region: address.region,
-              region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
-              country_code: address.countryCodeAlpha2,
-              postcode: address.postalCode,
-              company: address.company !== 'undefined' ? address.company : '',
-              telephone: address.phoneNumber,
-              firstname: address.firstName,
-              lastname: address.lastName,
-            };
+            const address = profileData.shippingAddress;
+            let mappedAddress;
+            if (address) {
+              mappedAddress = {
+                id: null,
+                street: [
+                  address.streetAddress,
+                ],
+                city: address.locality,
+                region: address.region,
+                region_id: configStore.getRegionId(address.countryCodeAlpha2, address.region),
+                country_code: address.countryCodeAlpha2,
+                postcode: address.postalCode,
+                company: address.company !== 'undefined' ? address.company : '',
+                telephone: address.phoneNumber,
+                firstname: address.firstName,
+                lastname: address.lastName,
+              };
 
-            const result = await getShippingMethods(mappedAddress);
-            const methods = result.shipping_addresses[0].available_shipping_methods;
+              const result = await getShippingMethods(mappedAddress);
+              const methods = result.shipping_addresses[0].available_shipping_methods;
 
-            if (methods.length) {
-              await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
-              stepsStore.goToPayment();
-            } else {
-              stepsStore.goToShipping();
+              if (methods.length) {
+                await shippingMethodsStore.submitShippingInfo(methods[0].carrier_code, methods[0].method_code);
+                stepsStore.goToPayment();
+              } else {
+                stepsStore.goToShipping();
+              }
             }
           }
+
+          await this.setProfileData(profileData, email);
+          this.setData({ profileEmail: email });
         }
       }
 
@@ -250,7 +262,7 @@ export default defineStore('fastlaneStore', {
         profileData,
       });
 
-      const { default: { stores: { useCustomerStore } } } = await import(window.geneCheckout.main);
+      const { default: { stores: { useCustomerStore } } } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
 
       if (email) {
@@ -265,7 +277,7 @@ export default defineStore('fastlaneStore', {
             useCustomerStore, useStepsStore, useShippingMethodsStore, useValidationStore,
           },
         },
-      } = await import(window.geneCheckout.main);
+      } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
       const shippingMethodsStore = useShippingMethodsStore();
       const validationStore = useValidationStore();
@@ -306,7 +318,7 @@ export default defineStore('fastlaneStore', {
               useCustomerStore,
             },
           },
-        } = await import(window.geneCheckout.main);
+        } = await import(window.bluefinchCheckout.main);
 
         const cartStore = useCartStore();
         const customerStore = useCustomerStore();
@@ -348,7 +360,7 @@ export default defineStore('fastlaneStore', {
             useRecaptchaStore,
           },
         },
-      } = await import(window.geneCheckout.main);
+      } = await import(window.bluefinchCheckout.main);
 
       const agreementStore = useAgreementStore();
       const recaptchStore = useRecaptchaStore();
@@ -381,7 +393,7 @@ export default defineStore('fastlaneStore', {
             useValidationStore,
           },
         },
-      } = await import(window.geneCheckout.main);
+      } = await import(window.bluefinchCheckout.main);
       const customerStore = useCustomerStore();
       const loadingStore = useLoadingStore();
       const paymentStore = usePaymentStore();
@@ -424,7 +436,7 @@ export default defineStore('fastlaneStore', {
             createPaymentRest,
           },
         },
-      } = await import(window.geneCheckout.main);
+      } = await import(window.bluefinchCheckout.main);
 
       const paymentMethod = {
         email: customerStore.customer.email,
@@ -462,7 +474,7 @@ export default defineStore('fastlaneStore', {
 
     handleThreeDS(nonce) {
       return new Promise((resolve, reject) => {
-        import(window.geneCheckout.main)
+        import(window.bluefinchCheckout.main)
           .then(async ({
             default: {
               helpers: {
@@ -562,8 +574,8 @@ export default defineStore('fastlaneStore', {
     },
 
     overrideGoToYouDetails() {
-      window.geneCheckout.overrides.setDetailsStepActive = async () => {
-        const { default: { stores: { useStepsStore } } } = await import(window.geneCheckout.main);
+      window.bluefinchCheckout.overrides.setDetailsStepActive = async () => {
+        const { default: { stores: { useStepsStore } } } = await import(window.bluefinchCheckout.main);
         const stepsStore = useStepsStore();
 
         if (this.profileData && this.$state.fastlaneInstance) {

@@ -3,5 +3,6 @@ parameters:
     paths:
         - .
     excludePaths:
+        - 'dev/composerstub'
         - 'vendor'
         - 'node_modules'
