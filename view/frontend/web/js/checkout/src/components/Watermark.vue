@@ -30,7 +30,7 @@ export default {
       default: {
         stores: { useCustomerStore },
       },
-    } = await import(window.geneCheckout.main);
+    } = await import(window.bluefinchCheckout.main);
     const customerStore = useCustomerStore();
     this.userLoggedIn = customerStore.isLoggedIn;
 
