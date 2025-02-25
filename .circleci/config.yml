@@ -78,6 +78,8 @@ jobs:
           working_directory: ~/magento2
           command: |
             REPODIR=$(realpath ~/project)
+            composer config allow-plugins.magento/* false
+            composer config allow-plugins.magento/composer-installer true
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
             composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
             composer config minimum-stability dev
