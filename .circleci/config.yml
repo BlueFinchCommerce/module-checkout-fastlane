@@ -78,7 +78,9 @@ jobs:
           working_directory: ~/magento2
           command: |
             REPODIR=$(realpath ~/project)
-            composer remove magento/composer-dependency-version-audit-plugin --no-interaction
+            composer config allow-plugins --unset
+            composer config allow-plugins.magento/composer-dependency-version-audit-plugin false
+            composer config allow-plugins.magento/*
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
             composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
             composer config minimum-stability dev
