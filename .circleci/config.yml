@@ -80,7 +80,7 @@ jobs:
             REPODIR=$(realpath ~/project)
             composer config allow-plugins --unset
             composer config allow-plugins.magento/composer-dependency-version-audit-plugin false
-            composer config allow-plugins.magento/*
+            composer config allow-plugins.magento/* true
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
             composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
             composer config minimum-stability dev
