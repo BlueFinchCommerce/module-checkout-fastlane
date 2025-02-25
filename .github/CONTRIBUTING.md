@@ -1,15 +1,7 @@
-# Local workflow
+![BlueFinch Checkout](../assets/logo.svg)
 
-When you install the module it will be able to read from the generated `dist` but for making change it is best to use the `watch` functionality.
+# BlueFinch Checkout - Contributing
 
-Turn on support for vite watch in the admin panel or by using magerun
-- `BlueFinch -> Checkout -> General -> Enable local developer vite watch mode = yes`
-- `n98-magerun config:store:set bluefinchcommerce_checkout/general/enable_local_developer_vite_watch_mode=1`
- 
-```bash
-cd view/frontend/web/js/checkout/ # or view/adminhtml/web/js/checkout/
-npm ci
-npm run build-watch
-```
+We welcome contributions to any of the BlueFinch Checkout modules.
 
-This will populate `view/frontend/web/js/checkout/dist-dev` for use, allowing you to make changes and have them quickly visible on the frontend.
+Please refer to the [BlueFinch Checkout contributing guidelines](https://github.com/BlueFinchCommerce/module-checkout/blob/main/.github/CONTRIBUTING.md) that apply to both the core module and any extension modules, such as this one.
