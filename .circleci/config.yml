@@ -68,7 +68,6 @@ jobs:
             sysvshm \
             xsl
             sudo composer self-update
-            composer config --global github-oauth.github.com $GITHUB_CHECKOUT_TOKEN
             composer config -g allow-plugins true
       - run:
           name: Composer Create Project
@@ -81,7 +80,6 @@ jobs:
             REPODIR=$(realpath ~/project)
             composer config "repositories.1" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR\", \"options\": {\"symlink\":false}}"
             composer config "repositories.2" "{\"type\": \"path\", \"canonical\":true, \"url\": \"$REPODIR/dev/composerstub/fastlane\"}"
-            composer config "repositories.3" "{\"type\": \"vcs\", \"url\": \"https://github.com/BlueFinchCommerce/module-checkout\"}"
             composer config minimum-stability dev
             composer config prefer-stable true
             composer require bluefinchcommerce/module-checkout-fastlane:dev-${CIRCLE_BRANCH} --no-interaction
@@ -161,4 +159,4 @@ workflows:
   build-test:
     jobs:
       - build:
-          context: bluefinch checkout extension
+          context: bluefinch extension
