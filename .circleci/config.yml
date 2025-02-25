@@ -68,7 +68,6 @@ jobs:
             sysvshm \
             xsl
             sudo composer self-update
-            composer config -g allow-plugins true
       - run:
           name: Composer Create Project
           working_directory: ~/magento2
