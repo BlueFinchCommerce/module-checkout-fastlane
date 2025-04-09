@@ -2,6 +2,7 @@
   "name": "bluefinchcommerce/module-checkout-fastlane",
   "description": "",
   "type": "magento2-module",
+  "license": "GPL-3.0-only",
   "autoload": {
     "files": [
       "registration.php"
@@ -40,8 +41,5 @@
       "magento/composer-dependency-version-audit-plugin": true,
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
-  },
-  "license": [
-    "GPL-3.0-only"
-  ]
+  }
 }
