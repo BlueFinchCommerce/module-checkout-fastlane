@@ -24,6 +24,25 @@ export default defineStore('fastlaneStore', {
     email: null,
     isLookingUpUser: false,
     profileEmail: null,
+    styles: {
+      root: {
+        bg: '',
+        errorColor: '',
+        fontFamily: '',
+        fontSize: '',
+        paddings: '',
+        primaryColor: '',
+        textColor: '',
+      },
+      inputs: {
+        bg: '',
+        borderColor: '',
+        borderRadius: '',
+        borderWidth: '',
+        focusBorderColor: '',
+        textColor: '',
+      },
+    },
   }),
   getters: {},
   actions: {
@@ -107,6 +126,25 @@ export default defineStore('fastlaneStore', {
               deviceData: dataCollectorInstance.deviceData,
               platform: 'BT',
             },
+            styles: {
+              root: {
+                backgroundColor: this.$state.config.paypal_fastlane_root_background_color,
+                errorColor: this.$state.config.paypal_fastlane_root_error_color,
+                fontFamily: this.$state.config.paypal_fastlane_root_font_family,
+                fontSize: this.$state.config.paypal_fastlane_root_font_size,
+                padding: this.$state.config.paypal_fastlane_root_padding,
+                primaryColor: this.$state.config.paypal_fastlane_root_primary_color,
+                textColor: this.$state.config.paypal_fastlane_root_text_color,
+              },
+              input: {
+                backgroundColor: this.$state.config.paypal_fastlane_input_background_color,
+                borderColor: this.$state.config.paypal_fastlane_input_border_color,
+                borderRadius: this.$state.config.paypal_fastlane_input_border_radius,
+                borderWidth: this.$state.config.paypal_fastlane_input_border_width,
+                focusBorderColor: this.$state.config.paypal_fastlane_input_focus_border_color,
+                textColor: this.$state.config.paypal_fastlane_input_text_color,
+              },
+            },
           });
           this.setData({ fastlaneInstance });
 
@@ -127,6 +165,21 @@ export default defineStore('fastlaneStore', {
         'paypal_fastlane_insights_enabled',
         'paypal_fastlane_client_id',
         'paypal_fastlane_policy_active',
+
+        'paypal_fastlane_root_background_color',
+        'paypal_fastlane_root_error_color',
+        'paypal_fastlane_root_font_family',
+        'paypal_fastlane_root_font_size',
+        'paypal_fastlane_root_padding',
+        'paypal_fastlane_root_primary_color',
+        'paypal_fastlane_root_text_color',
+
+        'paypal_fastlane_input_background_color',
+        'paypal_fastlane_input_border_color',
+        'paypal_fastlane_input_border_radius',
+        'paypal_fastlane_input_border_width',
+        'paypal_fastlane_input_focus_border_color',
+        'paypal_fastlane_input_text_color',
       ];
 
       const config = await getStoreConfig(configs);
@@ -474,85 +527,85 @@ export default defineStore('fastlaneStore', {
 
     handleThreeDS(nonce) {
       return new Promise((resolve, reject) => {
-        import(window.bluefinchCheckout.main)
-          .then(async ({
+        import(window.bluefinchCheckout.main).then(async (
+          {
             default: {
               helpers: {
                 deepClone,
               },
               stores: { useBraintreeStore, useCartStore, useCustomerStore },
             },
-          }) => {
-            const braintreeStore = useBraintreeStore();
-            const cartStore = useCartStore();
-            const customerStore = useCustomerStore();
+          },
+        ) => {
+          const braintreeStore = useBraintreeStore();
+          const cartStore = useCartStore();
+          const customerStore = useCustomerStore();
 
-            // If 3DS is disabled, skip over this step.
-            if (!braintreeStore.threeDSEnabled) {
-              resolve(nonce);
-              return;
-            }
+          // If 3DS is disabled, skip over this step.
+          if (!braintreeStore.threeDSEnabled) {
+            resolve(nonce);
+            return;
+          }
 
-            const billingAddress = deepClone(customerStore.selected.billing);
-            billingAddress.countryCodeAlpha2 = billingAddress.country_code;
-            billingAddress.region = billingAddress.region.region_code
-              || billingAddress.region.region;
+          const billingAddress = deepClone(customerStore.selected.billing);
+          billingAddress.countryCodeAlpha2 = billingAddress.country_code;
+          billingAddress.region = billingAddress.region.region_code
+            || billingAddress.region.region;
 
-            const price = cartStore.cartGrandTotal / 100;
-            const threshold = braintreeStore.threeDSThresholdAmount;
-            const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
+          const price = cartStore.cartGrandTotal / 100;
+          const threshold = braintreeStore.threeDSThresholdAmount;
+          const challengeRequested = braintreeStore.alwaysRequestThreeDS || price >= threshold;
 
-            const threeDSecureParameters = {
-              amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
-              nonce,
-              bin: {},
-              challengeRequested,
-              billingAddress,
-              onLookupComplete: (lookupData, next) => {
-                next();
-              },
+          const threeDSecureParameters = {
+            amount: parseFloat(cartStore.cartGrandTotal / 100).toFixed(2),
+            nonce,
+            bin: {},
+            challengeRequested,
+            billingAddress,
+            onLookupComplete: (lookupData, next) => {
+              next();
+            },
+          };
+
+          const threeDSecureInstance = braintreeStore.$state.threeDSecureInstance
+            || window.braintree.threeDSecure
+              .create({
+                version: 2,
+                client: this.$state.clientInstance,
+              });
+
+          this.$state.threeDSecureInstance = await threeDSecureInstance;
+
+          this.$state.threeDSecureInstance.verifyCard(
+            threeDSecureParameters,
+          ).then((threeDSResponse) => {
+            const liability = {
+              shifted: threeDSResponse.liabilityShifted,
+              shiftPossible: threeDSResponse.liabilityShiftPossible,
             };
 
-            const threeDSecureInstance = braintreeStore.$state.threeDSecureInstance
-              || window.braintree.threeDSecure
-                .create({
-                  version: 2,
-                  client: this.$state.clientInstance,
-                });
+            if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
+              resolve(threeDSResponse.nonce);
+            } else {
+              reject(new Error('Please try again with another form of payment.'));
+            }
 
-            this.$state.threeDSecureInstance = await threeDSecureInstance;
-
-            this.$state.threeDSecureInstance.verifyCard(
-              threeDSecureParameters,
-            ).then((threeDSResponse) => {
-              const liability = {
-                shifted: threeDSResponse.liabilityShifted,
-                shiftPossible: threeDSResponse.liabilityShiftPossible,
-              };
-
-              if (liability.shifted || (!liability.shifted && !liability.shiftPossible)) {
-                resolve(threeDSResponse.nonce);
-              } else {
-                reject(new Error('Please try again with another form of payment.'));
+            return true;
+          }).catch((error) => {
+            if (error.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
+              const errorMessage = error.details.originalError.details
+                .originalError.error.message;
+              const message = 'Please update the address and try again.';
+              if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
+                return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
               }
-
-              return true;
-            })
-              .catch((error) => {
-                if (error.code === 'THREEDS_LOOKUP_VALIDATION_ERROR') {
-                  const errorMessage = error.details.originalError.details
-                    .originalError.error.message;
-                  const message = 'Please update the address and try again.';
-                  if (errorMessage === 'Billing line1 format is invalid.' && billingAddress.street[0].length > 50) {
-                    return reject(new Error(`Billing line1 must be string and less than 50 characters. ${message}`));
-                  }
-                  if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
-                    return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
-                  }
-                }
-                return reject(error);
-              });
+              if (errorMessage === 'Billing line2 format is invalid.' && billingAddress.street[1].length > 50) {
+                return reject(new Error(`Billing line2 must be string and less than 50 characters. ${message}`));
+              }
+            }
+            return reject(error);
           });
+        });
       });
     },
 
