@@ -88,14 +88,16 @@ export default defineStore('fastlaneStore', {
           if (!this.$state.config.paypal_fastlane_is_active) {
             return;
           }
-
-          await this.addRequiredJs();
-          window.localStorage.setItem('axoEnv', 'sandbox');
-
+  
+  
           const {
             default: { stores: { useBraintreeStore } },
           } = await import(window.bluefinchCheckout.main);
           const braintreeStore = useBraintreeStore();
+          const { environment } = braintreeStore;
+          
+          await this.addRequiredJs();
+          window.localStorage.setItem('axoEnv', environment);
 
           await braintreeStore.createClientToken();
           const { clientToken } = braintreeStore;
